@@ -256,8 +256,9 @@ const problem = ref<string | null>(null)
 
 const modes = computed<{ key: Mode; label: string }[]>(() => [
   { key: 'carrie', label: 'Ask Carrie' },
-  { key: 'ask', label: 'Ask her' },
-  { key: 'tell', label: 'Tell her' },
+  // Named, so nobody takes "her" to mean Carrie.
+  { key: 'ask', label: `Ask ${her.value}` },
+  { key: 'tell', label: `Tell ${her.value}` },
 ])
 
 const placeholder = computed(() =>
