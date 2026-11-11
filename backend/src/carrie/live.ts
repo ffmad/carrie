@@ -26,7 +26,7 @@ export async function startLiveSession(req: LiveSessionRequest): Promise<LiveSes
 const FACTS_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['facts', 'consentQuestion'],
+  required: ['facts', 'consentQuestion', 'urgent'],
   properties: {
     facts: {
       type: 'array',
@@ -47,9 +47,15 @@ const FACTS_SCHEMA = {
         {
           type: 'object',
           additionalProperties: false,
-          required: ['factIndex', 'audience', 'question'],
-          properties: { factIndex: { type: 'integer' }, audience: { type: 'string', enum: [...AUDIENCES] }, question: { type: 'string' } },
+          required: ['factIndex', 'person', 'audience', 'question'],
+          properties: { factIndex: { type: 'integer' }, person: { type: 'string', enum: ['Mia', 'Leo', 'Dr. Chen'] }, audience: { type: 'string', enum: [...AUDIENCES] }, question: { type: 'string' } },
         },
+      ],
+    },
+    urgent: {
+      anyOf: [
+        { type: 'null' },
+        { type: 'object', additionalProperties: false, required: ['reason', 'quote'], properties: { reason: { type: 'string' }, quote: { type: 'string' } } },
       ],
     },
   },
@@ -68,8 +74,12 @@ async function openaiFacts(req: FactsRequest): Promise<FactsResponse> {
     text: { format: { type: 'json_schema', name: 'rose_facts', schema: FACTS_SCHEMA as any, strict: true } },
   })
   const parsed = JSON.parse(res.output_text)
-  const { reply: _unused, ...rest } = keepVerbatimFacts({ reply: '', ...parsed }, req.elderText)
-  return rest
+  const { reply: _unused, ...rest } = keepVerbatimFacts({ reply: '', facts: parsed.facts, consentQuestion: parsed.consentQuestion }, req.elderText)
+  const out: FactsResponse = rest
+  // keepVerbatimFacts keeps the consent question's own fields, so `person` survives; re-derive audience from it.
+  if (out.consentQuestion?.person) out.consentQuestion.audience = out.consentQuestion.person === 'Dr. Chen' ? 'doctor' : 'family'
+  if (parsed.urgent) out.urgent = parsed.urgent
+  return out
 }
 
 export type FactsSource = 'openai' | 'claude' | 'script' | 'script-fallback' | 'openai-failed'

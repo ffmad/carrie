@@ -25,6 +25,8 @@ export interface ConsentQuestion {
   factIndex: number
   audience: (typeof AUDIENCES)[number]
   question: string
+  /** The one person this question is about: "Mia", "Leo" or "Dr. Chen". Set by the OpenAI facts path. */
+  person?: string
 }
 
 export interface TurnResponse {
@@ -40,7 +42,10 @@ export const FactsRequestSchema = TurnRequestSchema.extend({
 })
 export type FactsRequest = z.infer<typeof FactsRequestSchema>
 /** Response of POST /api/carrie/facts: a TurnResponse without `reply` (GPT-Live does the talking). */
-export type FactsResponse = Omit<TurnResponse, 'reply'>
+export type FactsResponse = Omit<TurnResponse, 'reply'> & {
+  /** Set when Rose describes something urgent (a fall, chest pain, can't breathe, fainted, self-harm). */
+  urgent?: { reason: string; quote: string }
+}
 
 /** Request body of POST /api/live/session. The browser's WebRTC offer plus what Carrie should know. */
 export const LiveSessionRequestSchema = z.object({
