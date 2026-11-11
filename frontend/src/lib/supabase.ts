@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import type { Call, Fact, Person, Utterance, VoiceNote } from '../types'
+import type { Call, CareRequest, CareSettings, Fact, Person, Utterance, VoiceNote } from '../types'
 
 const url = import.meta.env.VITE_SUPABASE_URL
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -9,7 +9,7 @@ export const supabase: SupabaseClient | null = url && anonKey ? createClient(url
 
 export const CLIPS_BUCKET = 'clips'
 
-export type TableName = 'people' | 'calls' | 'utterances' | 'facts' | 'voice_notes'
+export type TableName = 'people' | 'calls' | 'utterances' | 'facts' | 'voice_notes' | 'requests' | 'care_settings'
 // Untyped rows until lib/database.types.ts is generated from the real schema.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Row = Record<string, any>
@@ -54,10 +54,10 @@ export async function saveRow(table: TableName, row: Row): Promise<boolean> {
   return enqueue(() => client.from(table).upsert(row), `save to ${table}`)
 }
 
-export async function patchRow(table: TableName, id: string, patch: Row): Promise<boolean> {
+export async function patchRow(table: TableName, id: string, patch: Row, key = 'id'): Promise<boolean> {
   const client = supabase
   if (!client) return false
-  return enqueue(() => client.from(table).update(patch).eq('id', id), `update ${table}`)
+  return enqueue(() => client.from(table).update(patch).eq(key, id), `update ${table}`)
 }
 
 /** Playable URL for a stored clip path. Null when there is nothing to play. */
@@ -112,8 +112,8 @@ export const toFact = (r: Row): Fact => ({
   category: r.category,
   statement: r.statement,
   quote: r.quote,
-  shareFamily: Boolean(r.share_family),
-  shareDoctor: Boolean(r.share_doctor),
+  sharedWith: r.shared_with ?? [],
+  claimedBy: r.claimed_by ?? null,
   consent: r.consent ?? 'pending',
   createdAt: r.created_at,
 })
@@ -125,9 +125,38 @@ export const toVoiceNote = (r: Row): VoiceNote => ({
   audioPath: r.audio_path ?? '',
   transcript: r.transcript ?? null,
   replyToFactId: r.reply_to_fact_id ?? null,
+  inReplyTo: r.in_reply_to ?? null,
   deliveredCallId: r.delivered_call_id ?? null,
   deliveredAt: r.delivered_at ?? null,
   createdAt: r.created_at,
+})
+
+export const toCall = (r: Row): Call => ({
+  id: r.id,
+  elderId: r.elder_id,
+  startedAt: r.started_at,
+  endedAt: r.ended_at ?? null,
+  summary: r.summary ?? null,
+})
+
+export const toRequest = (r: Row): CareRequest => ({
+  id: r.id,
+  elderId: r.elder_id,
+  fromId: r.from_id,
+  kind: r.kind,
+  text: r.text ?? '',
+  status: r.status ?? 'pending',
+  handledCallId: r.handled_call_id ?? null,
+  createdAt: r.created_at,
+})
+
+export const toSettings = (r: Row): CareSettings => ({
+  elderId: r.elder_id,
+  callTime: r.call_time ?? '10:00',
+  checks: r.checks ?? [],
+  mainContactId: r.main_contact_id ?? null,
+  doctorId: r.doctor_id ?? null,
+  nextAppointment: r.next_appointment ?? null,
 })
 
 /* Domain -> row */
@@ -159,8 +188,8 @@ export const fromFact = (f: Fact): Row => ({
   category: f.category,
   statement: f.statement,
   quote: f.quote,
-  share_family: f.shareFamily,
-  share_doctor: f.shareDoctor,
+  shared_with: f.sharedWith,
+  claimed_by: f.claimedBy,
   consent: f.consent,
   created_at: f.createdAt,
 })
@@ -172,7 +201,19 @@ export const fromVoiceNote = (v: VoiceNote): Row => ({
   audio_path: v.audioPath,
   transcript: v.transcript,
   reply_to_fact_id: v.replyToFactId,
+  in_reply_to: v.inReplyTo,
   delivered_call_id: v.deliveredCallId,
   delivered_at: v.deliveredAt,
   created_at: v.createdAt,
+})
+
+export const fromRequest = (q: CareRequest): Row => ({
+  id: q.id,
+  elder_id: q.elderId,
+  from_id: q.fromId,
+  kind: q.kind,
+  text: q.text,
+  status: q.status,
+  handled_call_id: q.handledCallId,
+  created_at: q.createdAt,
 })

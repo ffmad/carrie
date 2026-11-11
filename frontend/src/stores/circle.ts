@@ -18,7 +18,7 @@ export const personKey = (person: Person): string =>
     .replace(/^-|-$/g, '')
 
 export const homeRouteFor = (key: ViewerKey): string =>
-  key === 'rose' ? '/call' : key === 'dr-chen' ? '/doctor' : '/family'
+  key === 'rose' ? '/rose' : key === 'dr-chen' ? '/doctor' : `/family/${key}`
 
 function storedViewer(): ViewerKey {
   try {

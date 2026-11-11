@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { onBeforeUnmount, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { recorderSupported, startRecording, type ActiveRecording, type Recording } from '../lib/recorder'
 
-/** Record a voice note, listen back, then send. Carrie plays the real recording, never a paraphrase. */
-defineProps<{ toName: string }>()
-const emit = defineEmits<{ send: [payload: { recording: Recording; transcript: string }] }>()
+/**
+ * Record a voice note, listen back, then send. Carrie plays the real recording, never a paraphrase.
+ * With `autostart` it begins recording as soon as it appears (the microphone button in a composer);
+ * it then emits `close` when the person backs out or has sent.
+ */
+const props = defineProps<{ toName: string; autostart?: boolean }>()
+const emit = defineEmits<{ send: [payload: { recording: Recording; transcript: string }]; close: [] }>()
 
 const state = ref<'idle' | 'recording' | 'review'>('idle')
 const seconds = ref(0)
@@ -21,7 +25,7 @@ async function start() {
   try {
     active = await startRecording()
   } catch {
-    problem.value = 'Carrie needs microphone access to record your voice note.'
+    problem.value = 'Carrie needs your microphone to record this. Allow it in the browser and try again.'
     return
   }
   seconds.value = 0
@@ -39,18 +43,31 @@ async function stop() {
 }
 
 function discard() {
+  clearInterval(timer)
+  active?.cancel()
+  active = null
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
   previewUrl.value = null
   recording = null
   transcript.value = ''
   state.value = 'idle'
+  emit('close')
 }
 
 function send() {
   if (!recording) return
   emit('send', { recording, transcript: transcript.value })
-  discard()
+  if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+  previewUrl.value = null
+  recording = null
+  transcript.value = ''
+  state.value = 'idle'
+  emit('close')
 }
+
+onMounted(() => {
+  if (props.autostart && recorderSupported) void start()
+})
 
 onBeforeUnmount(() => {
   clearInterval(timer)
@@ -60,23 +77,34 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="recorder">
-    <p v-if="!recorderSupported" class="muted small">Recording is not supported in this browser.</p>
+    <template v-if="!recorderSupported">
+      <p class="muted small">This browser cannot record. Try Chrome or Safari.</p>
+      <button v-if="autostart" type="button" class="btn btn--ghost" @click="emit('close')">Close</button>
+    </template>
 
     <template v-else-if="state === 'idle'">
-      <button type="button" class="btn btn--primary btn--block" @click="start">Record a voice note for {{ toName }}</button>
+      <div class="row">
+        <button v-if="autostart" type="button" class="btn btn--ghost" @click="emit('close')">Cancel</button>
+        <button type="button" class="btn btn--primary recorder__grow" @click="start">Record a message for {{ toName }}</button>
+      </div>
     </template>
 
     <template v-else-if="state === 'recording'">
-      <p class="recorder__live" role="status"><span class="recorder__pulse" /> Recording… {{ seconds }}s</p>
-      <button type="button" class="btn btn--danger btn--block" @click="stop">Stop</button>
+      <div class="row">
+        <p class="recorder__live recorder__grow" role="status">
+          <span class="recorder__pulse" /> Recording for {{ toName }}… {{ seconds }}s
+        </p>
+        <button type="button" class="btn btn--ghost" @click="discard">Cancel</button>
+        <button type="button" class="btn btn--danger" @click="stop">Stop</button>
+      </div>
     </template>
 
     <template v-else>
       <audio v-if="previewUrl" class="recorder__preview" :src="previewUrl" controls />
-      <input v-model="transcript" class="input" type="text" placeholder="What did you say? (optional caption)" />
+      <input v-model="transcript" class="input" type="text" placeholder="What did you say? (optional)" @keydown.enter="send" />
       <div class="row">
         <button type="button" class="btn btn--ghost" @click="discard">Discard</button>
-        <button type="button" class="btn btn--primary recorder__send" @click="send">Send to {{ toName }}</button>
+        <button type="button" class="btn btn--primary recorder__grow" @click="send">Send to {{ toName }}</button>
       </div>
     </template>
 
@@ -88,7 +116,12 @@ onBeforeUnmount(() => {
 .recorder {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
+}
+
+.recorder__grow {
+  flex: 1;
+  min-width: 0;
 }
 
 .recorder__live {
@@ -99,6 +132,7 @@ onBeforeUnmount(() => {
 }
 
 .recorder__pulse {
+  flex: none;
   width: 12px;
   height: 12px;
   border-radius: var(--radius-pill);
@@ -108,10 +142,7 @@ onBeforeUnmount(() => {
 
 .recorder__preview {
   width: 100%;
-}
-
-.recorder__send {
-  flex: 1;
+  height: 40px;
 }
 
 .recorder__problem {

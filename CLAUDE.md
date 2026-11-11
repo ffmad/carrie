@@ -10,13 +10,15 @@ The demo loop:
 
 1. **The call.** Carrie phones grandma Rose and says she is an AI in her first line. Rose only talks. Live captions on screen.
 2. **Receipts.** Every fact Carrie keeps ("knee hurts on the stairs since Sunday") links to the clip of Rose saying it. Carrie never claims something she cannot play back.
-3. **"Can I share this?"** Carrie asks before passing anything on. Family and doctor are separate answers ("tell the doctor, not my daughter").
+3. **"Can I share this?"** Carrie asks before passing anything on, one person at a time ("Can I tell Mia?" does not tell Leo), and Rose can take it back.
 4. **Family, both ways.** Mia sees the shared facts and taps one to hear Rose. Leo records a voice note; Carrie plays his real voice to Rose on the next call.
 5. **Doctor brief.** One screen for the appointment, built only from facts shared with the doctor.
 
 Cast: Rose (grandma, 78), Mia (daughter), Leo (grandson), Dr. Chen. All fictional.
 
-Decided, do not reopen: Carrie is a stylized character and never a realistic human; she always says she is an AI; nothing is shared without a yes (the database enforces it). Cut: real phone lines, accounts and sign-in, reminders, wearables, multiple languages.
+Decided, do not reopen: Carrie is a stylized character (the dove) and never a realistic human; she always says she is an AI; nothing is shared without a yes (the database enforces it); nobody "starts a Carrie call", each person talks to Carrie in their own way. Cut: real phone lines, accounts and sign-in, wearables, multiple languages.
+
+**What each of the four people sees, the routes, and the data layer are in [docs/app-spec.md](docs/app-spec.md). Read it before touching `frontend/`.**
 
 ## Layout
 
@@ -24,38 +26,37 @@ Decided, do not reopen: Carrie is a stylized character and never a realistic hum
 package.json   Supabase CLI (pinned) and the db:* / dev:* scripts
 supabase/      config.toml, migrations/, seed.sql (a week of demo data)
 frontend/      Vue 3 + Vite + TypeScript PWA, port 5240
-  src/views/       Home (pick a role), Call, Family, Fact, Doctor
-  src/stores/      circle, call, facts, voiceNotes (Supabase first, demoData as fallback)
-  src/lib/         supabase, api, recorder (MediaRecorder), speech (captions + Carrie's voice)
-  src/components/  CarrieAvatar, CaptionStream, FactCard, ShareBadge, ReceiptPlayer, ...
-  src/styles/      tokens.css holds every color, radius and font
-backend/       Node + Hono API, port 3050
-  src/carrie/      prompt.ts, turn.ts (Claude), script.ts (scripted call when there is no key)
-design/        design explorations (not pushed until a direction is picked)
+  src/views/       Home (whose phone is this), rose/, family/ (Mia and Leo), doctor/
+  src/stores/      circle, call (the live call), calls, facts, voiceNotes, requests, settings
+  src/lib/         supabase, api, live (GPT-Live call), recorder, speech, poll (every phone refreshes every 3 s)
+  src/components/  CarrieAvatar (the dove), CarrieLogo, CaptionStream, ReceiptPlayer, ...
+  src/styles/      tokens.css holds every color, radius and font; layout.css the screen frame
+backend/       Node + Hono API, port 3050 (owned by aashcep's Claude)
+  src/carrie/      live.ts (GPT-Live 1 session), prompt.ts, turn.ts, script.ts
+design/        the dove's source files and the explorations (not pushed)
 docs/agents/   one status file per agent
 ```
 
-Tables: `people`, `calls`, `utterances`, `facts`, `voice_notes`, and a public storage bucket `clips` for audio. The comments in [the migration](supabase/migrations/20261111120000_core_schema.sql) explain each one.
+Tables: `people`, `calls`, `utterances`, `facts` (with `shared_with`, the people who may see each one), `voice_notes`, `requests` ("ask her", "tell her", "check in now"), `care_settings`, and a public storage bucket `clips` for audio. The comments in [the migrations](supabase/migrations/) explain each one.
 
-## Not decided yet: what powers Carrie
+## What powers Carrie
 
-The backend calls the Claude API today, but we may run Carrie on something else. The two Claudes are settling it on the sync issue. Until then, treat `backend/src/carrie/turn.ts` as a placeholder and put nothing specific to one provider anywhere else.
-
-What the rest of the app depends on is only the exchange in `backend/src/carrie/types.ts`: in goes what Rose just said, the conversation so far and any waiting voice notes; out come Carrie's reply, the facts with Rose's exact words, and optionally one "can I share this?" question. Keep that shape, or propose a change on the sync issue before building against a different one.
+Carrie's voice is OpenAI GPT-Live 1, full duplex over WebRTC from Rose's phone (`frontend/src/lib/live.ts`, `POST /api/live/session`). It listens and speaks; the facts are worked out beside the call by `POST /api/carrie/facts` after each thing Rose says. Without an OpenAI key the call falls back to turn-by-turn (`POST /api/carrie/turn`, Claude or a script). The shapes are in `backend/src/carrie/types.ts`; change them only after saying so on the sync issue.
 
 ## Run it
 
 ```
 npm install                      # root: Supabase CLI
 echo '[]' > supabase/signing_keys.json && npx supabase gen signing-key --algorithm ES256   # once per machine
-npm run db:start                 # local Supabase, native runtime, no Docker; applies migration + seed
+npm run db:start                 # local Supabase, native runtime, no Docker; applies migrations + seed
+npm run db:reset                 # after pulling a new migration: rebuilds the local database from migrations + seed
 npx supabase status --output-format json   # "env" has API_URL and PUBLISHABLE_KEY
 ```
 
 Put those two values in `frontend/.env.local` as `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The native runtime picks its own ports, so they differ per machine. Without that file the app still runs on bundled demo data.
 
 ```
-cd backend  && npm install && cp .env.example .env && npm run dev    # add your own ANTHROPIC_API_KEY; empty = scripted call
+cd backend  && npm install && cp .env.example .env && npm run dev    # keys go in .env; with none, Carrie follows a script
 cd frontend && npm install && npm run dev                            # http://localhost:5240
 ```
 

@@ -5,9 +5,12 @@ import { LiveCall } from '../lib/live'
 import { playAudio, type Recording } from '../lib/recorder'
 import { speak, stopSpeaking } from '../lib/speech'
 import { clipUrl, fromCall, fromUtterance, saveRow, uploadClip } from '../lib/supabase'
-import type { Audience, Call, CarrieTurnResponse, ShareDecision, Speaker, Utterance } from '../types'
+import type { Audience, Call, CarrieTurnResponse, ShareDecision, Speaker, Utterance, VoiceNote } from '../types'
+import { useCallsStore } from './calls'
 import { useCircleStore } from './circle'
 import { useFactsStore } from './facts'
+import { useRequestsStore } from './requests'
+import { useSettingsStore } from './settings'
 import { useVoiceNotesStore } from './voiceNotes'
 
 /**
@@ -24,12 +27,16 @@ export interface PendingConsent {
   audience: Audience
   /** The fact Carrie asked about. The answer applies to this fact only; unasked facts stay private. */
   factId: string | null
+  /** The people a yes would tell. Sharing is per person: "Can I tell Mia?" does not tell Leo. */
+  personIds: string[]
 }
 
 export const useCallStore = defineStore('call', () => {
   const circle = useCircleStore()
   const factsStore = useFactsStore()
   const voiceNotes = useVoiceNotesStore()
+  const requests = useRequestsStore()
+  const settings = useSettingsStore()
 
   const phase = ref<CallPhase>('idle')
   const carrie = ref<CarrieState>('idle')
@@ -43,6 +50,12 @@ export const useCallStore = defineStore('call', () => {
   /** True when Carrie runs on GPT-Live 1 (backend has an OpenAI key): she listens and speaks herself. */
   const liveMode = ref(false)
   let live: LiveCall | null = null
+  /** The family recording that is playing to the elder right now. */
+  const playingNote = ref<VoiceNote | null>(null)
+  /** A family recording has just been played: if the elder answers its sender, her words go back to them. */
+  let answerableNote: VoiceNote | null = null
+  /** Typed questions from the family or the doctor that Carrie still has to ask in this call (turn path). */
+  let toAsk: string[] = []
 
   const inCall = computed(() => phase.value === 'talking' || phase.value === 'consent')
   const callFacts = computed(() => (call.value ? factsStore.forCall(call.value.id) : []))
@@ -57,6 +70,25 @@ export const useCallStore = defineStore('call', () => {
     interim.value = ''
     error.value = null
     pendingConsent.value = null
+    playingNote.value = null
+    answerableNote = null
+    toAsk = []
+  }
+
+  /** The elder taps Carrie to talk: the same call, without the ringing. */
+  async function start() {
+    if (inCall.value) return
+    ring()
+    await answer()
+  }
+
+  /** Back to resting, after the summary or a declined call. */
+  function reset() {
+    if (inCall.value) hangUp()
+    phase.value = 'idle'
+    call.value = null
+    utterances.value = []
+    liveMode.value = false
   }
 
   /** The elder picks up: Carrie introduces herself (as an AI) and plays any waiting voice notes. */
@@ -70,6 +102,7 @@ export const useCallStore = defineStore('call', () => {
     void saveRow('calls', fromCall(call.value))
 
     const waiting = voiceNotes.pendingFor(elder.id)
+    const carried = takeRequests(call.value.id)
     const response = await askCarrie('', waiting.map((n) => ({ from: circle.byId(n.fromId)?.name ?? 'Your family', transcript: n.transcript ?? '' })))
     if (!response) return
     await say(response.reply)
@@ -79,9 +112,19 @@ export const useCallStore = defineStore('call', () => {
       const url = clipUrl(note.audioPath)
       addUtterance('family', note.transcript ?? 'Voice note', note.audioPath || null, note.fromId)
       carrie.value = 'idle'
+      playingNote.value = note
       if (url) await playAudio(url)
+      playingNote.value = null
+      answerableNote = note
       void voiceNotes.markDelivered(note.id, call.value.id)
     }
+    // Typed messages have no recording, so Carrie says them herself and names who they are from.
+    // Things to tell come now; questions wait until Rose has had her say (see askNext).
+    for (const q of carried.filter((c) => c.kind === 'tell')) {
+      if (!inCall.value) return
+      await say(`${q.from} asked me to tell you: ${q.text}`)
+    }
+    toAsk = carried.filter((c) => c.kind === 'ask').map((q) => `${q.from} asked me to check something with you. ${q.text}`)
     if (inCall.value) carrie.value = 'listening'
   }
 
@@ -98,6 +141,7 @@ export const useCallStore = defineStore('call', () => {
     const history = historyForCarrie()
     const utterance = addUtterance('elder', said, audioPath, circle.elder.id, utteranceId)
     factsStore.addReceipt(utterance)
+    carryAnswerBack(said, audioPath)
 
     if (phase.value === 'consent' && pendingConsent.value && !options.consentHandled) {
       await applyConsent(interpretConsent(said, pendingConsent.value.audience))
@@ -120,8 +164,8 @@ export const useCallStore = defineStore('call', () => {
         category: extracted.category,
         statement: extracted.statement,
         quote: extracted.quote,
-        shareFamily: false,
-        shareDoctor: false,
+        sharedWith: [],
+        claimedBy: null,
         consent: 'pending',
         createdAt: new Date().toISOString(),
       })
@@ -132,10 +176,18 @@ export const useCallStore = defineStore('call', () => {
         question: response.consentQuestion.question,
         audience: response.consentQuestion.audience,
         factId: createdIds[response.consentQuestion.factIndex] ?? null,
+        personIds: peopleAskedAbout(response.consentQuestion.audience, response.consentQuestion.question),
       }
       phase.value = 'consent'
     }
     await say(response.reply)
+    if (!response.consentQuestion) await askNext()
+  }
+
+  /** One carried question at a time, and never on top of a sharing question. */
+  async function askNext() {
+    if (!inCall.value || phase.value !== 'talking' || !toAsk.length) return
+    await say(toAsk.shift()!)
   }
 
   /* GPT-Live 1: Carrie talks on her own; the app keeps receipts, facts and consent beside the call. */
@@ -151,7 +203,17 @@ export const useCallStore = defineStore('call', () => {
     const waiting = voiceNotes.pendingFor(elder.id)
     let notesPlayed = waiting.length === 0
     const session = (live = new LiveCall({
-      onStarted: () => (carrie.value = 'listening'),
+      onStarted: () => {
+        carrie.value = 'listening'
+        const carried = call.value ? takeRequests(call.value.id) : []
+        if (carried.length) {
+          live?.instruct(
+            `Rose's family and doctor gave you these to bring up during this call, one at a time, when it fits. Say who each is from. ${carried
+              .map((q, i) => `${i + 1}) ${q.from} ${q.kind === 'ask' ? 'asks' : 'wants her to know'}: "${q.text}"`)
+              .join(' ')}`,
+          )
+        }
+      },
       onElderPartial: (text) => (interim.value = text),
       onElderTurn: (text, clip) => void hearElderLive(text, clip),
       onCarrieSpeaking: (speaking) => {
@@ -180,11 +242,14 @@ export const useCallStore = defineStore('call', () => {
       if (!inCall.value || !call.value) return
       const url = clipUrl(note.audioPath)
       addUtterance('family', note.transcript ?? 'Voice note', note.audioPath || null, note.fromId)
+      playingNote.value = note
       if (url) await playAudio(url)
+      playingNote.value = null
+      answerableNote = note
       void voiceNotes.markDelivered(note.id, call.value.id)
     }
     const names = notes.map((n) => circle.byId(n.fromId)?.name ?? 'the family').join(' and ')
-    live?.instruct(`The voice note from ${names} has just finished playing. Gently ask Rose what she thought of it.`)
+    live?.instruct(`The voice note from ${names} has just finished playing. Gently ask Rose what she thought of it, and whether she would like you to tell them anything back.`)
   }
 
   async function hearElderLive(text: string, clip: Recording | null) {
@@ -196,6 +261,7 @@ export const useCallStore = defineStore('call', () => {
     const history = historyForCarrie()
     const utterance = addUtterance('elder', text, audioPath, circle.elder.id, utteranceId)
     factsStore.addReceipt(utterance)
+    carryAnswerBack(text, audioPath)
 
     if (phase.value === 'consent' && pendingConsent.value) {
       await applyConsent(interpretConsent(text, pendingConsent.value.audience))
@@ -218,12 +284,12 @@ export const useCallStore = defineStore('call', () => {
       await factsStore.add({
         id, callId, elderId: circle.elder.id, utteranceId,
         category: extracted.category, statement: extracted.statement, quote: extracted.quote,
-        shareFamily: false, shareDoctor: false, consent: 'pending', createdAt: new Date().toISOString(),
+        sharedWith: [], claimedBy: null, consent: 'pending', createdAt: new Date().toISOString(),
       })
     }
     if (response.consentQuestion && !pendingConsent.value) {
       const q = response.consentQuestion
-      pendingConsent.value = { question: q.question, audience: q.audience, factId: createdIds[q.factIndex] ?? null }
+      pendingConsent.value = { question: q.question, audience: q.audience, factId: createdIds[q.factIndex] ?? null, personIds: peopleAskedAbout(q.audience, q.question) }
       phase.value = 'consent'
       live?.instruct(`As soon as Rose finishes her current thought, ask her this sharing question in your own warm words: "${q.question}" Ask only about this one thing and this one audience.`)
     }
@@ -253,8 +319,10 @@ export const useCallStore = defineStore('call', () => {
     }
     if (call.value && !call.value.endedAt) {
       call.value.endedAt = new Date().toISOString()
-      void saveRow('calls', fromCall(call.value))
+      void saveRow('calls', fromCall(call.value)).then(() => useCallsStore().load())
     }
+    playingNote.value = null
+    answerableNote = null
     phase.value = call.value ? 'ended' : 'idle'
     carrie.value = 'idle'
     interim.value = ''
@@ -311,11 +379,51 @@ export const useCallStore = defineStore('call', () => {
 
   /** The answer covers the one fact Carrie asked about. Anything she did not ask about stays private. */
   async function applyConsent(decision: ShareDecision) {
-    const factId = pendingConsent.value?.factId
-    if (factId) await factsStore.setSharing(factId, decision)
+    const pending = pendingConsent.value
+    if (!pending?.factId) return
+    const allow: string[] = []
+    const deny: string[] = []
+    if (decision.family !== undefined) {
+      // A yes tells only the people Carrie named; a no keeps it from the whole family.
+      if (decision.family) allow.push(...(pending.audience === 'family' ? pending.personIds : peopleAskedAbout('family', '')))
+      else deny.push(...circle.family.map((p) => p.id))
+    }
+    if (decision.doctor !== undefined && circle.doctor) (decision.doctor ? allow : deny).push(circle.doctor.id)
+    await factsStore.setSharing(pending.factId, { allow, deny })
   }
 
-  return { phase, carrie, call, utterances, interim, thinking, error, pendingConsent, liveMode, inCall, callFacts, elderTurns, ring, answer, hearElder, answerConsent, hangUp }
+  /** Who a yes would tell: the doctor, or the family members named in the question (the main contact if none is). */
+  function peopleAskedAbout(audience: Audience, question: string): string[] {
+    if (audience === 'doctor') return circle.doctor ? [circle.doctor.id] : []
+    const named = circle.family.filter((p) => new RegExp(`\\b${p.name}\\b`, 'i').test(question))
+    if (named.length) return named.map((p) => p.id)
+    const main = settings.mainContact
+    return main ? [main.id] : []
+  }
+
+  /** The pending "ask her" and "tell her" requests, handed to Carrie for this call and marked as carried. */
+  function takeRequests(callId: string): { from: string; kind: 'ask' | 'tell'; text: string }[] {
+    const carried = requests.pending().filter((q) => q.kind !== 'checkin' && q.text)
+    carried.forEach((q) => void requests.markDone(q.id, callId))
+    return carried.map((q) => ({ from: circle.byId(q.fromId)?.name ?? 'Your family', kind: q.kind as 'ask' | 'tell', text: q.text }))
+  }
+
+  /**
+   * After a family recording, the elder's words go back to its sender only when she addresses them
+   * ("Tell Leo…", "Leo, …"). Anything else she says stays in the call until she agrees to share it.
+   */
+  function carryAnswerBack(text: string, audioPath: string | null) {
+    const note = answerableNote
+    if (!note || !call.value) return
+    const sender = circle.byId(note.fromId)
+    if (!sender) return
+    const addressed = new RegExp(`\\btell (him|her|them|${sender.name})\\b|^(oh,?\\s+)?${sender.name}\\b`, 'i').test(text.trim())
+    if (!addressed) return
+    answerableNote = null
+    void voiceNotes.addReply({ fromId: circle.elder.id, toId: sender.id, audioPath, transcript: text.trim(), inReplyTo: note.id, callId: call.value.id })
+  }
+
+  return { phase, carrie, call, utterances, interim, thinking, error, pendingConsent, liveMode, playingNote, inCall, callFacts, elderTurns, ring, answer, start, reset, hearElder, answerConsent, hangUp }
 })
 
 const FAMILY_WORDS = /\b(daughter|family|mia|leo|grandson|son|kids|children)\b/

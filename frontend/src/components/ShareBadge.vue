@@ -1,27 +1,37 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useCircleStore } from '../stores/circle'
 import type { Fact } from '../types'
 
-/** Who a fact is shared with: private, family, doctor (independently), or not asked yet. */
-const props = defineProps<{ fact: Pick<Fact, 'shareFamily' | 'shareDoctor' | 'consent'> }>()
+/** Who knows this, by name. Sharing is per person, so each person gets their own pill. */
+const props = defineProps<{ fact: Pick<Fact, 'sharedWith' | 'consent'> }>()
+
+const circle = useCircleStore()
 
 const badges = computed(() => {
-  const { shareFamily, shareDoctor, consent } = props.fact
-  if (!shareFamily && !shareDoctor) {
-    return consent === 'pending'
-      ? [{ kind: 'pending', label: 'Not asked yet' }]
-      : [{ kind: 'private', label: 'Private' }]
+  const ids = props.fact.sharedWith ?? []
+  if (!ids.length) {
+    return props.fact.consent === 'pending'
+      ? [{ key: 'pending', kind: 'pending', label: 'Not asked yet' }]
+      : [{ key: 'private', kind: 'private', label: 'Just between us' }]
   }
-  return [
-    ...(shareFamily ? [{ kind: 'family', label: 'Family' }] : []),
-    ...(shareDoctor ? [{ kind: 'doctor', label: 'Doctor' }] : []),
-  ]
+  return ids.flatMap((id) => {
+    const person = circle.byId(id)
+    if (!person) return []
+    return [
+      {
+        key: id,
+        kind: person.role === 'doctor' ? 'doctor' : 'family',
+        label: id === circle.viewer.id ? 'You' : person.name,
+      },
+    ]
+  })
 })
 </script>
 
 <template>
-  <span class="share">
-    <span v-for="badge in badges" :key="badge.kind" class="share__badge" :class="`share__badge--${badge.kind}`">
+  <span class="share" aria-label="Who knows this">
+    <span v-for="badge in badges" :key="badge.key" class="share__badge" :class="`share__badge--${badge.kind}`">
       {{ badge.label }}
     </span>
   </span>

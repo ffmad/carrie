@@ -1,50 +1,43 @@
 # Quentin's Claude (ffmad)
 
-Last updated: 11 Nov, 20:14 Taipei time.
+Last updated: 11 Nov, 20:58 Taipei time.
 
 ## I own
 
-- `frontend/` — the Vue PWA
+- `frontend/` — the app, except the call engine (`src/lib/live.ts` and the live parts of `src/stores/call.ts` are aashcep's; tell me before changing the rest of that store)
 - `supabase/` — schema, seed, config
-- `design/` — character, logo, colors (not pushed yet)
-- root files (`package.json`, `CLAUDE.md`, `.claude/`)
-- `backend/` — only the scaffold so far. **Open to hand over**, see below.
+- `design/` — the dove's source files (not pushed)
+- root files (`package.json`, `CLAUDE.md`, `docs/app-spec.md`, `.claude/`)
 
-## Doing now
+## What changed tonight (read this if you pulled before 21:00)
 
-- Testing the call with a real microphone in Chrome: live captions, one audio clip per thing Rose says, upload to `clips`, and playing a clip back from the family feed. None of that has run with a microphone yet.
-- Design: five directions generated with Codex (carrier bird, voice glow, geometric neighbour, string phone, the word carries). Quentin picks one next, then it goes into `frontend/src/styles/tokens.css` and `CarrieAvatar.vue`.
+- **The app is rebuilt around four people.** [docs/app-spec.md](../app-spec.md) says what each sees, the routes and the data layer. Old routes are gone: `/call` is now `/rose`, `/family` is `/family/mia` or `/family/leo`, `/doctor` stays.
+- **Sharing is per person.** `facts.share_family` and `facts.share_doctor` are replaced by `facts.shared_with` (a list of person ids). New tables `requests` and `care_settings`. **Run `npm run db:reset` after pulling.**
+- **The call store carries more into a call:** pending "ask her" and "tell her" requests from the family and the doctor are handed to Carrie (`session.instructions.append` on a live call, extra `pendingVoiceNotes` entries marked "Typed, not a recording" on the turn path), and Rose's answer to a family recording goes back to its sender when she addresses them ("Tell Leo…").
+- **The dove is in:** tokens, Nunito, the three-pose avatar, icons.
+- Your pull request #2 (GPT-Live call) is merged into `main`.
 
 ## Done
 
-- Local Supabase with the schema, a `clips` audio bucket and a week of seeded calls for Rose. Checked through the API: reads, clip upload and playback work, and a fact cannot be shared without a recorded yes.
-- `backend/`: `POST /api/carrie/turn` takes what Rose just said and returns Carrie's reply, the facts with their exact quotes, and an optional "can I share this?" question. It uses Claude when a key is set and a scripted call when not. The request and response shapes are in `backend/src/carrie/types.ts`.
-- The five screens (Home, Call, Family, Fact, Doctor) read the local database, and fall back to bundled demo data without one.
-- A call works end to end with typed lines: ring, Carrie says she is an AI, announces Leo's waiting voice note, takes a fact, asks to share it. The call, its lines and the facts are saved; "tell the doctor, not my daughter" ends as doctor yes, family no.
-- Measured with Claude (`claude-sonnet-5-5`): about 1.7 s for the opening line and 2.6 to 3.4 s for a reply that carries a fact. That is slower than a phone call should feel, and worth weighing in the provider decision.
+- Rose: resting screen (tap the dove to talk), incoming call, in-call screen, what Carrie will pass on, and "What I've shared" with take-back.
+- Mia and Leo: the conversation with Carrie, the Mum / Grandma page, the Circle page.
+- Dr. Chen: the pre-visit page, with questions for Carrie and after-visit notes.
+- Every phone reloads the shared data every 3 seconds, so two browser windows stay in step.
 
-Known shortcuts:
+## Not verified yet
 
-- A spoken yes or no to "can I share this?" is read with a simple pattern match in `frontend/src/stores/call.ts`; tap buttons are the backup.
-- Facts whose quote is not word for word in what Rose said are dropped by the backend.
-- Seeded lines have no recording, so their receipts are read aloud in a synthetic voice, labelled as such.
+- Anything with a microphone, and a real GPT-Live call.
+- "Check in now" making Rose's phone ring across two devices.
 
-## Next, in this order
+## Known shortcuts
 
-1. Microphone pass in Chrome (see "Doing now"), then fix what breaks.
-2. Family feed updating live during the call.
-3. Rose hearing Leo's real recording in the call.
-4. Apply the chosen design, then record the video.
-
-## Open areas, nobody on them yet
-
-- **Carrie's brain** (`backend/src/carrie/`): the prompt, how well she pulls facts out, how she asks for consent, how she brings up a waiting voice note. Biggest effect on how the demo feels.
-- **Voice**: the app uses the browser's speech recognition and speech synthesis for now. A better voice for Carrie, or better transcription, would show in the video.
-- **Rose's recorded lines**: the seeded facts have no audio, so their receipts do not play. Someone has to record them (the lines are in `supabase/seed.sql`).
-- **The video**: script, on-screen captions, recording.
+- "Ask Carrie" in the family conversation is word matching over what Rose shared with that person (`frontend/src/lib/answer.ts`). No model call.
+- A spoken yes or no is read by a pattern match in `stores/call.ts`. "Family" in a consent question means the family members it names, or the main contact when it names nobody.
+- The urgent rule (fall, chest pain) is stated in the app but not detected.
+- The call time is a setting; nothing rings on a timer. "Check in now" is what makes Rose's phone ring.
 
 ## I need from the other side
 
-- **What Carrie runs on.** We may not use the Claude API. My questions are in [the sync issue](https://github.com/ffmad/carrie/issues/1#issuecomment-6795474635). Until it is answered the Claude version stays as a placeholder behind `backend/src/carrie/types.ts`.
-- Which open areas you are taking, in your status file.
-- The original idea write-up. I have only seen a one-line summary of it (an AI that calls grandma, tracks her health and backs every fact with her own words), so tell me if something above goes against it.
+- **`consentQuestion.personId` or the person's name** from `/api/carrie/facts` and `/turn`, so "Can I tell Leo?" does not depend on me reading the name out of the question text.
+- **A family-side answer endpoint** if you have time: `POST /api/carrie/ask` with a question and the facts that person may see, returning an answer that cites them. It would replace my word matching.
+- Whether a real GPT-Live call works with the key, and whether Carrie brings up the carried requests.
