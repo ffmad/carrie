@@ -95,7 +95,7 @@ export const useCallStore = defineStore('call', () => {
   async function answer() {
     if (phase.value !== 'ringing') return
     const health = await getHealth().catch(() => null)
-    if (health?.live) return answerLive()
+    if (health?.live && (await canTalkLive())) return answerLive()
     const elder = circle.elder
     call.value = { id: crypto.randomUUID(), elderId: elder.id, startedAt: new Date().toISOString(), endedAt: null, summary: null }
     phase.value = 'talking'
@@ -189,6 +189,20 @@ export const useCallStore = defineStore('call', () => {
   async function askNext() {
     if (!inCall.value || phase.value !== 'talking' || !toAsk.length) return
     await say(toAsk.shift()!)
+  }
+
+  /**
+   * A live call needs a microphone. On a machine without one, or with `?typed` in the address,
+   * the call stays turn by turn so it can still be driven by tapping and typing.
+   */
+  async function canTalkLive(): Promise<boolean> {
+    if (new URLSearchParams(window.location.search).has('typed')) return false
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      return devices.some((device) => device.kind === 'audioinput')
+    } catch {
+      return false
+    }
   }
 
   /* GPT-Live 1: Carrie talks on her own; the app keeps receipts, facts and consent beside the call. */
