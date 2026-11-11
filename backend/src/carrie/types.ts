@@ -61,3 +61,20 @@ export interface LiveSessionResponse {
   /** The WebRTC answer. Apply it with setRemoteDescription({ type: 'answer', sdp }). */
   sdp: string
 }
+
+/** Request body of POST /api/carrie/family-update. `sharedFacts` must be ONLY what Rose shared with family. */
+export const FamilyUpdateRequestSchema = z.object({
+  member: z.object({ name: z.string(), relation: z.string().optional(), lastSpokeWithElder: z.string().optional() }),
+  sharedFacts: z
+    .array(z.object({ id: z.string(), statement: z.string(), quote: z.string(), category: z.string(), createdAt: z.string() }))
+    .max(200),
+  /** Defaults to now. Lets the demo pretend it is a given day. */
+  now: z.string().optional(),
+})
+export type FamilyUpdateRequest = z.infer<typeof FamilyUpdateRequestSchema>
+export interface FamilyUpdateResponse {
+  /** Heads-ups on change ("dizzy 2 days running", "new: a fall"). Each points at a shared fact. */
+  alerts: { factId: string; text: string }[]
+  /** A reason to call Rose now, and things to talk about, each from her own shared words. */
+  nudge: { reason: string; daysSinceLastCall: number | null; talkAbout: { factId: string; text: string }[] } | null
+}

@@ -3,8 +3,9 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { env } from './env'
 import { carrieTurn } from './carrie/turn'
-import { FactsRequestSchema, LiveSessionRequestSchema, TurnRequestSchema } from './carrie/types'
+import { FamilyUpdateRequestSchema, FactsRequestSchema, LiveSessionRequestSchema, TurnRequestSchema } from './carrie/types'
 import { extractFacts, startLiveSession } from './carrie/live'
+import { familyUpdate } from './carrie/familyUpdate'
 import { recall, remember } from './carrie/memory'
 
 const app = new Hono()
@@ -61,6 +62,15 @@ app.post('/api/carrie/facts', async (c) => {
     const callId = parsed.data.callId
     void response.facts.reduce((prev, fact) => prev.then(() => remember(fact, callId)), Promise.resolve())
   }
+  c.header('x-carrie-source', source)
+  return c.json(response)
+})
+
+/** Family page: heads-ups on change and a nudge to call Rose, built only from facts she shared with family. */
+app.post('/api/carrie/family-update', async (c) => {
+  const parsed = FamilyUpdateRequestSchema.safeParse(await c.req.json().catch(() => null))
+  if (!parsed.success) return c.json({ error: 'Invalid request body', issues: parsed.error.issues }, 400)
+  const { response, source } = await familyUpdate(parsed.data)
   c.header('x-carrie-source', source)
   return c.json(response)
 })
