@@ -33,11 +33,12 @@ const FACTS_SCHEMA = {
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['category', 'statement', 'quote'],
+        required: ['category', 'statement', 'quote', 'sharing'],
         properties: {
           category: { type: 'string', enum: [...FACT_CATEGORIES] },
           statement: { type: 'string' },
           quote: { type: 'string' },
+          sharing: { type: 'string', enum: ['everyday', 'ask', 'private'] },
         },
       },
     },

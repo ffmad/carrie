@@ -18,6 +18,14 @@ export interface ExtractedFact {
   statement: string
   /** Exact words the elder said. This is what the audio receipt plays back. */
   quote: string
+  /**
+   * How this fact is shared under the circle's agreed framework (set by the OpenAI facts path):
+   * - 'everyday': ordinary, non-worrying life (cooked, saw a friend, feeling better). Shared with family
+   *   automatically, as everyone agreed up front. Not sent to the doctor unless it is about health.
+   * - 'ask': health that is new, worse or negative, medicine problems, falls. Carrie asks Rose, one person at a time.
+   * - 'private': Rose said to keep it to herself ("don't tell anyone", "between us"). Shared with nobody.
+   */
+  sharing?: 'everyday' | 'ask' | 'private'
 }
 
 export interface ConsentQuestion {
