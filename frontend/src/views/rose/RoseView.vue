@@ -140,7 +140,13 @@ let captioner: Captioner | null = null
 let recording: ActiveRecording | null = null
 
 const busy = computed(() => call.thinking || call.carrie === 'speaking')
-const avatarState = computed(() => (listening.value ? 'listening' : call.carrie))
+const avatarState = computed(() => {
+  if (call.playingNote) return 'playing'
+  if (listening.value) return 'listening'
+  if (call.thinking) return 'thinking'
+  if (call.phase === 'consent' && call.carrie !== 'speaking') return 'asking'
+  return call.carrie
+})
 const showConsent = computed(() => call.phase === 'consent' && !!call.pendingConsent && !call.liveMode)
 const askedNames = computed(() =>
   (call.pendingConsent?.personIds ?? []).map((id) => circle.byId(id)?.name).filter((name): name is string => !!name),
@@ -293,7 +299,7 @@ onBeforeUnmount(() => {
         <p class="ring__sub">Your AI helper would like a chat</p>
       </div>
       <div class="ring__dove">
-        <CarrieAvatar state="speaking" :size="236" />
+        <CarrieAvatar state="waving" :size="236" />
       </div>
       <div class="ring__actions">
         <button type="button" class="btn btn--accent btn--big btn--block ring__answer" :disabled="starting" @click="answer">
@@ -394,7 +400,7 @@ onBeforeUnmount(() => {
     <!-- After the call: what goes to whom -->
     <template v-else>
       <div class="screen__scroll after">
-        <CarrieAvatar state="idle" :size="124" />
+        <CarrieAvatar :state="passOn.length ? 'sending' : 'keeping'" :size="124" />
         <h1 class="after__title">{{ passOn.length ? "Here's what I'll pass on" : 'Lovely talking with you' }}</h1>
         <p v-if="call.error" class="oncall__error" role="alert">{{ call.error }}</p>
         <p v-if="!passOn.length" class="after__none">I have nothing to pass on this time.</p>

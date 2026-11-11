@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import FactCard from '../../components/FactCard.vue'
+import FamilyNudge from '../../components/FamilyNudge.vue'
 import { CATEGORY_LABELS, formatDay, initialOf } from '../../lib/format'
 import { useCallsStore } from '../../stores/calls'
 import { useCircleStore } from '../../stores/circle'
@@ -92,6 +93,7 @@ const carriePath = computed(() => `/family/${route.params.who === 'leo' ? 'leo' 
 <template>
   <div class="her">
     <div class="screen__scroll her__scroll">
+      <FamilyNudge :her="her" />
       <section class="card her__head">
         <div class="her__who">
           <span class="her__avatar" :style="{ background: elder.avatarColor }" aria-hidden="true">{{ initialOf(elder.name) }}</span>

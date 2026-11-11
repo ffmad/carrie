@@ -14,6 +14,7 @@ const askedBy = reactive<Record<string, Asked[]>>({})
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import CarrieAvatar from '../../components/CarrieAvatar.vue'
+import FamilyVoiceCall from '../../components/FamilyVoiceCall.vue'
 import FactCard from '../../components/FactCard.vue'
 import ReceiptPlayer from '../../components/ReceiptPlayer.vue'
 import VoiceNoteRecorder from '../../components/VoiceNoteRecorder.vue'
@@ -298,6 +299,9 @@ async function passOn(asked: Asked) {
 
 const checkingIn = computed(() => requests.pending('checkin').some((request) => request.fromId === viewer.value.id))
 
+/* Talking to Carrie by voice: she is given only what Rose shared with this person. */
+const talking = ref(false)
+
 function checkIn() {
   if (checkingIn.value || busy.value) return
   void addRequest('checkin')
@@ -315,6 +319,7 @@ async function sendNote(payload: { recording: Recording; transcript: string }) {
 
 <template>
   <div class="chat">
+    <FamilyVoiceCall v-if="talking" :her="her" @close="talking = false" />
     <div ref="scroller" class="screen__scroll chat__scroll" @scroll.passive="onScroll">
       <div ref="list" class="chat__list">
       <div class="chat__intro">
@@ -409,6 +414,7 @@ async function sendNote(payload: { recording: Recording; transcript: string }) {
               {{ option.label }}
             </button>
           </div>
+          <button type="button" class="checkin" @click="talking = true">Talk</button>
           <button type="button" class="checkin" :disabled="checkingIn || busy" @click="checkIn">
             <svg viewBox="0 0 24 24" class="checkin__icon" aria-hidden="true">
               <path d="M6.600 3h3l1.500 4.500-2 1.500a12 12 0 0 0 5.900 5.900l1.500-2 4.500 1.500v3a2 2 0 0 1-2.200 2A16.500 16.500 0 0 1 4.600 5.200 2 2 0 0 1 6.600 3z" />
@@ -714,5 +720,15 @@ async function sendNote(payload: { recording: Recording; transcript: string }) {
     opacity: 0;
     transform: translateY(6px);
   }
+}
+
+.chat {
+  position: relative;
+}
+
+/* Room for the mode chips and the two calls to Carrie on a narrow phone. */
+.composer__top {
+  flex-wrap: wrap;
+  row-gap: var(--space-2);
 }
 </style>

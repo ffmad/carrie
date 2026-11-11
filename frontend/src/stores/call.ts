@@ -177,7 +177,7 @@ export const useCallStore = defineStore('call', () => {
         question: response.consentQuestion.question,
         audience: response.consentQuestion.audience,
         factId: createdIds[response.consentQuestion.factIndex] ?? null,
-        personIds: peopleAskedAbout(response.consentQuestion.audience, response.consentQuestion.question),
+        personIds: peopleAskedAbout(response.consentQuestion.audience, response.consentQuestion.question, response.consentQuestion.person),
       }
       phase.value = 'consent'
     }
@@ -279,6 +279,8 @@ export const useCallStore = defineStore('call', () => {
       return
     }
     if (!call.value || call.value.id !== callId) return
+    // The facts step also judges urgency; the word match above is the fast path.
+    if (response.urgent && !URGENT.test(text)) void raiseAlarm(text, utteranceId)
     const createdIds: string[] = []
     for (const extracted of response.facts) {
       const id = crypto.randomUUID()
@@ -291,7 +293,7 @@ export const useCallStore = defineStore('call', () => {
     }
     if (response.consentQuestion && !pendingConsent.value) {
       const q = response.consentQuestion
-      pendingConsent.value = { question: q.question, audience: q.audience, factId: createdIds[q.factIndex] ?? null, personIds: peopleAskedAbout(q.audience, q.question) }
+      pendingConsent.value = { question: q.question, audience: q.audience, factId: createdIds[q.factIndex] ?? null, personIds: peopleAskedAbout(q.audience, q.question, q.person) }
       phase.value = 'consent'
       live?.instruct(`As soon as Rose finishes her current thought, ask her this sharing question in your own warm words: "${q.question}" Ask only about this one thing and this one audience.`)
     }
@@ -422,7 +424,10 @@ export const useCallStore = defineStore('call', () => {
   }
 
   /** Who a yes would tell: the doctor, or the family members named in the question (the main contact if none is). */
-  function peopleAskedAbout(audience: Audience, question: string): string[] {
+  function peopleAskedAbout(audience: Audience, question: string, person?: string): string[] {
+    // The backend names the one person when it can; otherwise read the name out of the question.
+    const namedByBackend = person ? circle.people.find((p) => p.role !== 'elder' && p.name.toLowerCase() === person.toLowerCase()) : null
+    if (namedByBackend) return [namedByBackend.id]
     if (audience === 'doctor') return circle.doctor ? [circle.doctor.id] : []
     const named = circle.family.filter((p) => new RegExp(`\\b${p.name}\\b`, 'i').test(question))
     if (named.length) return named.map((p) => p.id)

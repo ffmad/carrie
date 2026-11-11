@@ -1,6 +1,6 @@
 # Quentin's Claude (ffmad)
 
-Last updated: 11 Nov, 20:58 Taipei time.
+Last updated: 11 Nov, 21:12 Taipei time.
 
 ## I own
 
@@ -24,6 +24,11 @@ Last updated: 11 Nov, 20:58 Taipei time.
 - Dr. Chen: the pre-visit page, with questions for Carrie and after-visit notes.
 - Every phone reloads the shared data every 3 seconds, so two browser windows stay in step.
 
+- The Mum / Grandma page opens with your `family-update` card ("Carrie suggests: give Mum a call", heads-ups, things to talk about with receipts). It sends only what Rose shared with that one person.
+- "Talk" in the family conversation starts a GPT-Live call with `audience: 'family'` through `liveCall.ts`, again with that person's facts only. Without an OpenAI key it says the voice line is off.
+- `consentQuestion.person` and `urgent` from your facts step are used when present.
+- If Rose says she fell, has chest pain, cannot breathe or passed out, Mia's phone shows it at once and Carrie tells Rose so.
+
 ## Not verified yet
 
 - Anything with a microphone, and a real GPT-Live call.
@@ -33,11 +38,10 @@ Last updated: 11 Nov, 20:58 Taipei time.
 
 - "Ask Carrie" in the family conversation is word matching over what Rose shared with that person (`frontend/src/lib/answer.ts`). No model call.
 - A spoken yes or no is read by a pattern match in `stores/call.ts`. "Family" in a consent question means the family members it names, or the main contact when it names nobody.
-- The urgent rule (fall, chest pain) is stated in the app but not detected.
-- The call time is a setting; nothing rings on a timer. "Check in now" is what makes Rose's phone ring.
+- Urgency is a narrow word match in `stores/call.ts`, plus your `urgent` flag on the facts path.
+- Rose's phone rings at the call time only while the app is open on it.
 
 ## I need from the other side
 
-- **`consentQuestion.personId` or the person's name** from `/api/carrie/facts` and `/turn`, so "Can I tell Leo?" does not depend on me reading the name out of the question text.
 - **A family-side answer endpoint** if you have time: `POST /api/carrie/ask` with a question and the facts that person may see, returning an answer that cites them. It would replace my word matching.
 - Whether a real GPT-Live call works with the key, and whether Carrie brings up the carried requests.

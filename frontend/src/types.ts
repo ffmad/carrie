@@ -111,5 +111,7 @@ export interface CarrieTurnResponse {
   reply: string
   facts: { category: FactCategory; statement: string; quote: string }[]
   /** `factIndex` points into `facts` of the same response. */
-  consentQuestion?: { factIndex: number; audience: Audience; question: string }
+  consentQuestion?: { factIndex: number; audience: Audience; question: string; person?: string }
+  /** Set by the facts step when she describes something urgent (a fall, chest pain, cannot breathe). */
+  urgent?: { reason: string; quote: string }
 }
