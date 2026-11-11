@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { carrieTurn } from '../lib/api'
+import { carrieFacts, carrieTurn, getHealth } from '../lib/api'
+import { LiveCall } from '../lib/live'
 import { playAudio, type Recording } from '../lib/recorder'
 import { speak, stopSpeaking } from '../lib/speech'
 import { clipUrl, fromCall, fromUtterance, saveRow, uploadClip } from '../lib/supabase'
@@ -39,6 +40,9 @@ export const useCallStore = defineStore('call', () => {
   const thinking = ref(false)
   const error = ref<string | null>(null)
   const pendingConsent = ref<PendingConsent | null>(null)
+  /** True when Carrie runs on GPT-Live 1 (backend has an OpenAI key): she listens and speaks herself. */
+  const liveMode = ref(false)
+  let live: LiveCall | null = null
 
   const inCall = computed(() => phase.value === 'talking' || phase.value === 'consent')
   const callFacts = computed(() => (call.value ? factsStore.forCall(call.value.id) : []))
@@ -58,6 +62,8 @@ export const useCallStore = defineStore('call', () => {
   /** The elder picks up: Carrie introduces herself (as an AI) and plays any waiting voice notes. */
   async function answer() {
     if (phase.value !== 'ringing') return
+    const health = await getHealth().catch(() => null)
+    if (health?.live) return answerLive()
     const elder = circle.elder
     call.value = { id: crypto.randomUUID(), elderId: elder.id, startedAt: new Date().toISOString(), endedAt: null, summary: null }
     phase.value = 'talking'
@@ -132,15 +138,119 @@ export const useCallStore = defineStore('call', () => {
     await say(response.reply)
   }
 
+  /* GPT-Live 1: Carrie talks on her own; the app keeps receipts, facts and consent beside the call. */
+
+  async function answerLive() {
+    const elder = circle.elder
+    call.value = { id: crypto.randomUUID(), elderId: elder.id, startedAt: new Date().toISOString(), endedAt: null, summary: null }
+    phase.value = 'talking'
+    liveMode.value = true
+    carrie.value = 'idle'
+    void saveRow('calls', fromCall(call.value))
+
+    const waiting = voiceNotes.pendingFor(elder.id)
+    let notesPlayed = waiting.length === 0
+    const session = (live = new LiveCall({
+      onStarted: () => (carrie.value = 'listening'),
+      onElderPartial: (text) => (interim.value = text),
+      onElderTurn: (text, clip) => void hearElderLive(text, clip),
+      onCarrieSpeaking: (speaking) => {
+        if (inCall.value) carrie.value = speaking ? 'speaking' : 'listening'
+      },
+      onCarrieTurn: (text) => {
+        if (!call.value) return
+        addUtterance('carrie', text, null, null)
+        if (!notesPlayed) {
+          notesPlayed = true // Carrie's opening line announces the notes; play the real recordings now.
+          void playVoiceNotes(waiting)
+        }
+      },
+      onError: (message) => (error.value = message),
+    }))
+    try {
+      await session.start({ pendingVoiceNotes: waiting.map((n) => ({ from: circle.byId(n.fromId)?.name ?? 'Your family', transcript: n.transcript ?? '' })) })
+    } catch (cause) {
+      error.value = cause instanceof Error ? cause.message : 'Could not start the call'
+      hangUp()
+    }
+  }
+
+  async function playVoiceNotes(notes: ReturnType<typeof voiceNotes.pendingFor>) {
+    for (const note of notes) {
+      if (!inCall.value || !call.value) return
+      const url = clipUrl(note.audioPath)
+      addUtterance('family', note.transcript ?? 'Voice note', note.audioPath || null, note.fromId)
+      if (url) await playAudio(url)
+      void voiceNotes.markDelivered(note.id, call.value.id)
+    }
+    const names = notes.map((n) => circle.byId(n.fromId)?.name ?? 'the family').join(' and ')
+    live?.instruct(`The voice note from ${names} has just finished playing. Gently ask Rose what she thought of it.`)
+  }
+
+  async function hearElderLive(text: string, clip: Recording | null) {
+    if (!call.value || !inCall.value) return
+    interim.value = ''
+    const callId = call.value.id
+    const utteranceId = crypto.randomUUID()
+    const audioPath = clip ? await uploadClip(`calls/${callId}/${utteranceId}.${clip.extension}`, clip.blob) : null
+    const history = historyForCarrie()
+    const utterance = addUtterance('elder', text, audioPath, circle.elder.id, utteranceId)
+    factsStore.addReceipt(utterance)
+
+    if (phase.value === 'consent' && pendingConsent.value) {
+      await applyConsent(interpretConsent(text, pendingConsent.value.audience))
+      pendingConsent.value = null
+      phase.value = 'talking'
+    }
+
+    let response: Awaited<ReturnType<typeof carrieFacts>>
+    try {
+      response = await carrieFacts({ history, elderText: text, callId } as Parameters<typeof carrieFacts>[0])
+    } catch (cause) {
+      console.warn('[call] facts failed', cause)
+      return
+    }
+    if (!call.value || call.value.id !== callId) return
+    const createdIds: string[] = []
+    for (const extracted of response.facts) {
+      const id = crypto.randomUUID()
+      createdIds.push(id)
+      await factsStore.add({
+        id, callId, elderId: circle.elder.id, utteranceId,
+        category: extracted.category, statement: extracted.statement, quote: extracted.quote,
+        shareFamily: false, shareDoctor: false, consent: 'pending', createdAt: new Date().toISOString(),
+      })
+    }
+    if (response.consentQuestion && !pendingConsent.value) {
+      const q = response.consentQuestion
+      pendingConsent.value = { question: q.question, audience: q.audience, factId: createdIds[q.factIndex] ?? null }
+      phase.value = 'consent'
+      live?.instruct(`As soon as Rose finishes her current thought, ask her this sharing question in your own warm words: "${q.question}" Ask only about this one thing and this one audience.`)
+    }
+  }
+
   /** The elder answered the sharing question by tapping instead of speaking. */
   async function answerConsent(decision: ShareDecision) {
     if (phase.value !== 'consent') return
+    if (liveMode.value) {
+      await applyConsent(decision)
+      const said = describeDecision(decision)
+      if (call.value) addUtterance('elder', said, null, circle.elder.id)
+      pendingConsent.value = null
+      phase.value = 'talking'
+      live?.instruct(`Rose answered your sharing question by tapping: "${said}" Acknowledge it in a few words, say who you will and will not tell, and move on.`)
+      return
+    }
     await applyConsent(decision)
     await hearElder(describeDecision(decision), null, { consentHandled: true })
   }
 
   function hangUp() {
     stopSpeaking()
+    if (live) {
+      void live.close()
+      live = null
+    }
     if (call.value && !call.value.endedAt) {
       call.value.endedAt = new Date().toISOString()
       void saveRow('calls', fromCall(call.value))
@@ -205,7 +315,7 @@ export const useCallStore = defineStore('call', () => {
     if (factId) await factsStore.setSharing(factId, decision)
   }
 
-  return { phase, carrie, call, utterances, interim, thinking, error, pendingConsent, inCall, callFacts, elderTurns, ring, answer, hearElder, answerConsent, hangUp }
+  return { phase, carrie, call, utterances, interim, thinking, error, pendingConsent, liveMode, inCall, callFacts, elderTurns, ring, answer, hearElder, answerConsent, hangUp }
 })
 
 const FAMILY_WORDS = /\b(daughter|family|mia|leo|grandson|son|kids|children)\b/

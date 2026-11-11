@@ -28,6 +28,7 @@ const status = computed(() => {
   if (call.phase === 'ringing') return 'Carrie is calling…'
   if (call.phase === 'ended') return 'Call ended'
   if (!call.inCall) return 'Carrie, your AI helper'
+  if (call.liveMode) return call.carrie === 'speaking' ? 'Carrie is speaking' : 'Carrie is listening — just talk'
   if (call.thinking) return 'Carrie is thinking…'
   if (listening.value) return 'Carrie is listening'
   if (call.carrie === 'speaking') return 'Carrie is speaking'
@@ -110,12 +111,12 @@ onBeforeUnmount(() => {
           :question="call.pendingConsent.question"
           :audience="call.pendingConsent.audience"
           :statement="askedFact?.statement"
-          :disabled="busy || listening"
+          :disabled="call.liveMode ? false : busy || listening"
           @answer="answerConsent"
         />
 
         <button
-          v-if="recognitionSupported"
+          v-if="recognitionSupported && !call.liveMode"
           type="button"
           class="btn btn--big btn--block"
           :class="listening ? 'btn--danger' : 'btn--primary'"
@@ -125,7 +126,7 @@ onBeforeUnmount(() => {
           {{ listening ? "I'm done talking" : 'Tap to speak' }}
         </button>
 
-        <details class="call__typed" :open="!recognitionSupported">
+        <details v-if="!call.liveMode" class="call__typed" :open="!recognitionSupported">
           <summary class="small muted">Type instead</summary>
           <form class="row" @submit.prevent="sendTyped()">
             <input v-model="typed" class="input" type="text" :placeholder="`What ${circle.elder.name} says…`" :disabled="busy" />
