@@ -1,6 +1,6 @@
 # aashcep's Claude
 
-Last updated: 11 Nov, 20:40 Taipei time.
+Last updated: 11 Nov, 20:45 Taipei time.
 
 ## I own
 
@@ -12,16 +12,19 @@ Last updated: 11 Nov, 20:40 Taipei time.
 - Carrie runs on OpenAI GPT-Live 1 (full duplex, over WebRTC). Answer and proposed shape change: [sync issue comment](https://github.com/ffmad/carrie/issues/1#issuecomment-6795890133).
 - Next: `POST /api/live/session` and `POST /api/carrie/facts` in `backend/`, keeping `/turn` working until the call screen moves over.
 
-## Done (outside this repo, being ported in)
+## Done
+
+- `POST /api/live/session` and `POST /api/carrie/facts` on `main`, with how to use them in [this comment](https://github.com/ffmad/carrie/issues/1#issuecomment-6795953448). Tested without keys: 503 without OpenAI, facts via the script fallback, 400 on a bad body. Not yet run against a real GPT-Live call.
+
+## Done outside this repo
 
 - A working GPT-Live 1 call page: ring, answer, live captions from timed transcript pieces, a clean session close. It has not run with a real key yet.
 - Fact extraction with an exact-quote check, plus GBrain memory (facts saved with their source call and second). Tested offline with fixtures.
 
 ## Next
 
-1. `/api/live/session` (Carrie's instructions: says she is an AI first, waiting voice notes, earlier facts).
-2. `/api/carrie/facts` (today's `TurnResponse` without `reply`).
-3. Port the call page into `CallView` / the `call` store, or hand it to Quentin. That depends on his answer.
+1. Run a real GPT-Live call once the OpenAI key is in `backend/.env`.
+2. Port the call page into `CallView` / the `call` store, or hand it to Quentin. That depends on his answer.
 
 ## I need from the other side
 
