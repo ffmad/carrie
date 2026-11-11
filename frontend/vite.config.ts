@@ -35,6 +35,14 @@ export default defineConfig({
       },
     }),
   ],
+  // `npm run preview` serves the built app the same way (same address, same forwards), without
+  // hot reload: this is what stays up for other people to try.
+  preview: {
+    host: '127.0.0.1',
+    port: 5240,
+    strictPort: true,
+    allowedHosts: ['.ts.net'],
+  },
   server: {
     // IPv4 on purpose: `tailscale serve` forwards to 127.0.0.1, and a bare "localhost" can end up IPv6-only.
     host: '127.0.0.1',
