@@ -105,6 +105,7 @@ export const useCallStore = defineStore('call', () => {
   /** The elder picks up: Carrie introduces herself (as an AI) and plays any waiting voice notes. */
   async function answer() {
     if (phase.value !== 'ringing') return
+    unlockAudio() // must run inside the tap, before anything is awaited
     const health = await getHealth().catch(() => null)
     const typed = new URLSearchParams(window.location.search).has('typed')
     notice.value = null
@@ -221,6 +222,24 @@ export const useCallStore = defineStore('call', () => {
   async function askNext() {
     if (!inCall.value || phase.value !== 'talking' || !toAsk.length) return
     await say(toAsk.shift()!)
+  }
+
+  /**
+   * Phones (iOS Safari especially) only play sound that starts inside a tap. Answering awaits the
+   * health check and the microphone first, so sound is unlocked here, in the same tick as the tap:
+   * a silent player, an audio context, and an empty spoken line for the turn-by-turn voice.
+   */
+  function unlockAudio() {
+    try {
+      const player = new Audio()
+      player.setAttribute('playsinline', '')
+      void player.play().catch(() => {})
+      const context = new AudioContext()
+      void context.resume().then(() => context.close()).catch(() => {})
+      window.speechSynthesis?.speak(new SpeechSynthesisUtterance(''))
+    } catch {
+      // Nothing to unlock on this browser.
+    }
   }
 
   /**
