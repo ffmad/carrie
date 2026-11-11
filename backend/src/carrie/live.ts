@@ -1,6 +1,6 @@
 import OpenAI from 'openai'
 import { env } from '../env'
-import { FACTS_PROMPT, livePrompt } from './prompt'
+import { FACTS_PROMPT, familyLivePrompt, livePrompt } from './prompt'
 import { carrieTurn, keepVerbatimFacts } from './turn'
 import { AUDIENCES, FACT_CATEGORIES, type FactsRequest, type FactsResponse, type LiveSessionRequest, type LiveSessionResponse } from './types'
 
@@ -13,7 +13,7 @@ export async function startLiveSession(req: LiveSessionRequest): Promise<LiveSes
     {
       session: {
         model: env.liveModel,
-        instructions: livePrompt(req),
+        instructions: req.audience === 'family' ? familyLivePrompt(req) : livePrompt(req),
         audio: { output: { voice: env.liveVoice } },
       },
       transport: { type: 'webrtc', sdp: req.sdp },

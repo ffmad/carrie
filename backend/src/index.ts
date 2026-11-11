@@ -41,7 +41,8 @@ app.post('/api/live/session', async (c) => {
   if (!parsed.success) return c.json({ error: 'Invalid request body', issues: parsed.error.issues }, 400)
   try {
     const req = parsed.data
-    if (req.earlierFacts === undefined) req.earlierFacts = await recall()
+    // Carrie's memory holds everything Rose said, shared or not, so it is only used on calls with Rose.
+    if (req.audience === 'elder' && req.earlierFacts === undefined) req.earlierFacts = await recall()
     return c.json(await startLiveSession(req), 201)
   } catch (error) {
     console.error('[carrie] live session failed', error)
