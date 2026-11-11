@@ -19,6 +19,14 @@ const circle = useCircleStore()
 const facts = useFactsStore()
 
 const listening = ref(false)
+/** Call timer, like a phone shows during a call. */
+const now = ref(Date.now())
+const ticker = setInterval(() => (now.value = Date.now()), 1000)
+const clock = computed(() => {
+  const started = call.call?.startedAt ? Date.parse(call.call.startedAt) : now.value
+  const s = Math.max(0, Math.floor((now.value - started) / 1000))
+  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+})
 const typed = ref('')
 let captioner: Captioner | null = null
 let recording: ActiveRecording | null = null
@@ -28,7 +36,7 @@ const status = computed(() => {
   if (call.phase === 'ringing') return 'Carrie is calling…'
   if (call.phase === 'ended') return 'Call ended'
   if (!call.inCall) return 'Carrie, your AI helper'
-  if (call.liveMode) return call.carrie === 'speaking' ? 'Carrie is speaking' : 'Carrie is listening — just talk'
+  if (call.liveMode) return `On the phone with Carrie · ${clock.value}`
   if (call.thinking) return 'Carrie is thinking…'
   if (listening.value) return 'Carrie is listening'
   if (call.carrie === 'speaking') return 'Carrie is speaking'
@@ -75,6 +83,7 @@ function endCall() {
 }
 
 onBeforeUnmount(() => {
+  clearInterval(ticker)
   if (call.inCall || call.phase === 'ringing') endCall()
 })
 </script>
@@ -106,8 +115,9 @@ onBeforeUnmount(() => {
       <div class="call__panel">
         <p v-if="call.error" class="call__error small" role="alert">{{ call.error }}</p>
 
+        <!-- On a live call Rose answers out loud, like any phone call: no buttons to press. -->
         <ConsentPrompt
-          v-if="call.phase === 'consent' && call.pendingConsent"
+          v-if="call.phase === 'consent' && call.pendingConsent && !call.liveMode"
           :question="call.pendingConsent.question"
           :audience="call.pendingConsent.audience"
           :statement="askedFact?.statement"
