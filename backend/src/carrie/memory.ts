@@ -40,7 +40,7 @@ function gbrain(args: string[], timeoutMs = 15_000): Promise<string> {
 }
 
 /** Save one fact Rose said, with the call and her exact words as provenance. */
-export async function remember(fact: ExtractedFact, callId?: string): Promise<void> {
+export async function remember(fact: ExtractedFact, callId?: string, when: Date = new Date()): Promise<void> {
   try {
     await gbrain([
       'remember',
@@ -48,7 +48,7 @@ export async function remember(fact: ExtractedFact, callId?: string): Promise<vo
       '--entity', ENTITY,
       '--provenance', `${callId || 'call'} "${fact.quote}"`.slice(0, 500),
       '--content-origin', 'tool_output',
-      '--valid-from', new Date().toISOString().slice(0, 10),
+      '--valid-from', when.toISOString().slice(0, 10),
       '--json',
     ])
   } catch (error) {
