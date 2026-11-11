@@ -26,12 +26,11 @@ Carrie rings. Off camera, Mia taps **Check in now** on her phone; otherwise Carr
 
 | | Who | Line (guide) | What it shows |
 |---|---|---|---|
-| 1 | Carrie | "Hi Rose, it's Carrie, your AI helper… are you still waking up at four?" | **Says she's an AI**, and **remembers** this week (GBrain) |
-| 2 | Rose | "A bit better. I baked the apple cake this morning, the kitchen smells lovely." | **Everyday**: goes to the family **without asking** (the circle agreed up front) |
-| 3 | Rose | "But my knee's been bad on the stairs since Sunday." | **Health**: a fact chip appears with her clip, and this one needs her yes |
-| 4 | Carrie | "Can I tell Dr. Chen about your knee?" | **Asks first, names one person** |
-| 5 | Rose | "Yes, tell the doctor. Not Mia, she'll only fuss." | **Per-person consent** |
-| 6 | Rose | "And tell Leo to come early Saturday, the cake's best warm." | A message back to the family |
+| 1 | Carrie | "Hi Rose, it's Carrie, your AI helper. How have you been?" | **Says she's an AI** |
+| 2 | Rose | "Better, thanks. I baked the apple cake this morning. But my knee's been bad on the stairs since Sunday." | Cake = **everyday**, shared without asking. Knee = **health**, a fact chip with her clip |
+| 3 | Carrie | "Can I tell Dr. Chen about your knee?" | **Asks first, names one person** |
+| 4 | Rose | "Yes, tell the doctor. Not Mia." | **Per-person consent** |
+| 5 | Rose | "And tell Leo to come early Saturday. Bye, dear." | A message back to the family |
 
 Carrie does **not** ask about the cake; that's the point. Hang up. On screen, about 2 seconds: **"Here's what I'll pass on"**: the cake under To Mia and To Leo, the knee under To Dr. Chen.
 

@@ -41,13 +41,11 @@ The call has to come first: the family and doctor screens show what Rose says in
 ### Shot 1 · The call (camera over Rose's shoulder)
 1. Frame Rose's phone in Ash's hand, with the screen readable (dove, captions, fact chips). Start recording on the camera phone **before** the ring.
 2. Laptop, off camera: on `/family/mia`, tap **Check in now**.
-3. Phone rings. Ash taps **Answer**, holds the phone in front (not to the ear, so the screen stays in shot) and talks. Ash's lines, loosely, waiting for Carrie each time:
-   1. *(Carrie asks if Rose is still waking at four)* "A bit better. I baked the apple cake this morning, the kitchen smells lovely." Carrie should **not** ask to share this.
-   2. "But my knee's been bad on the stairs since Sunday."
-   3. *(Carrie asks "Can I tell Dr. Chen about your knee?")* "Yes, tell the doctor. Not Mia, she'll only fuss."
-   4. *(Carrie carries Dr. Chen's question about the dizziness)* "Now you mention it… yes, about half an hour after the pill."
-   5. "And tell Leo to come early on Saturday, the cake's best warm."
-   6. "That's all, dear. Bye now." Tap **Hang up**.
+3. Phone rings. Ash taps **Answer**, holds the phone in front (not to the ear, so the screen stays in shot) and talks. **Three short turns only.** Aim for under 40 seconds of call; wait for Carrie each time:
+   1. *(after Carrie's greeting)* "Better, thanks. I baked the apple cake this morning. But my knee's been bad on the stairs since Sunday."
+   2. *(Carrie asks "Can I tell Dr. Chen about your knee?")* "Yes, tell the doctor. Not Mia."
+   3. "And tell Leo to come early Saturday. Bye, dear." Tap **Hang up** right away. Don't wait for Carrie's goodbye.
+   - If Carrie asks something else first, answer in three words and carry on. In the edit, cut every pause and keep only these beats.
 4. Hold on the "Here's what I'll pass on" screen for 3 seconds, then stop recording.
 5. Bad take? Run `db:reset` and `memory:reset`, then do it again. Two or three takes at most.
 
