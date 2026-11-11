@@ -4,8 +4,8 @@ import { speak, stopSpeaking } from '../lib/speech'
 
 /**
  * The receipt: plays the clip of the person saying the quote, in their own voice.
- * When no recording exists (bundled demo seed), it says so and reads the quote
- * in the synthetic voice instead, clearly labelled.
+ * When no recording exists (bundled demo seed, or a typed line), it says so and
+ * reads the quote in the synthetic voice instead, clearly labelled.
  */
 const props = defineProps<{ src: string | null; quote: string; speaker?: string }>()
 
@@ -60,7 +60,7 @@ onBeforeUnmount(stop)
     <span v-if="src" class="receipt__track" aria-hidden="true">
       <span class="receipt__fill" :style="{ width: `${Math.round(progress * 100)}%` }" />
     </span>
-    <span v-else class="receipt__note">No recording in demo data</span>
+    <span v-else class="receipt__note">No recording, synthetic voice</span>
   </div>
 </template>
 

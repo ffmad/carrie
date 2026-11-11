@@ -1,7 +1,6 @@
 # Carrie frontend
 
 Vue 3 + Vite + TypeScript PWA (vue-router, Pinia, Supabase). Mobile-first; desktop shows it inside `PhoneFrame`.
-
 - `npm run dev` serves http://localhost:5240 and proxies `/api` to the backend on :3050. `npm run build` type-checks (vue-tsc) then builds.
 - `src/views/`: one file per route: `/` Home, `/call` Call, `/family` Family, `/fact/:id` Fact, `/doctor` Doctor.
 - `src/stores/`: `circle` (people, viewing as), `call` (live call state machine), `facts`, `voiceNotes`.
