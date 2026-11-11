@@ -27,6 +27,7 @@ One Carrie, four people, each talking to her in their own way.
 
 - **Voice:** OpenAI GPT-Live 1 over WebRTC, full duplex. Carrie listens and speaks; the app steers her mid-call (a sharing question to ask, a message from the family).
 - **Facts beside the call:** after each thing Rose says, a second model extracts facts with her exact quote, decides whether each is everyday, needs her yes, or is private, and flags anything urgent.
+- **Memory:** Carrie remembers the week through GBrain, where every fact is saved with the call it came from, so she can ask "still waking at four?".
 - **Receipts:** the microphone is kept during the call and cut by transcript time, so each fact plays back the moment she said it.
 - **App:** Vue 3 + Vite PWA. **Backend:** Node + Hono. **Data:** Supabase (Postgres and storage), run locally.
 - **Fallback:** without a microphone or an OpenAI key, the call runs turn by turn through Claude, or a script.
