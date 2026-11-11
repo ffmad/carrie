@@ -48,6 +48,12 @@ export const LiveSessionRequestSchema = z.object({
   pendingVoiceNotes: z.array(z.object({ from: z.string(), transcript: z.string() })).optional(),
   /** Facts Rose shared on earlier calls, as short statements, so Carrie can follow up ("How's the knee?"). */
   earlierFacts: z.array(z.string()).max(50).optional(),
+  /** Who Carrie talks to. 'family': a family member asks about Rose by voice. */
+  audience: z.enum(['elder', 'family']).default('elder'),
+  /** For 'family': who is calling (e.g. "Mia"). */
+  familyMember: z.string().max(60).optional(),
+  /** For 'family': ONLY the facts Rose agreed to share with family. Carrie's own memory is never used here. */
+  sharedFacts: z.array(z.string()).max(100).optional(),
 })
 export type LiveSessionRequest = z.infer<typeof LiveSessionRequestSchema>
 export interface LiveSessionResponse {
