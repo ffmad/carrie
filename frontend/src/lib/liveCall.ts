@@ -73,6 +73,7 @@ export function createLiveCall() {
   let t0 = 0 // performance.now() at session.started
   let micT0 = 0 // performance.now() when mic capture began
   let closed: (() => void) | null = null
+  let greeting = ''
   const turns = {
     elder: { text: '', start: 0, end: 0, timer: undefined as ReturnType<typeof setTimeout> | undefined },
     carrie: { text: '', start: 0, end: 0, timer: undefined as ReturnType<typeof setTimeout> | undefined },
@@ -100,7 +101,13 @@ export function createLiveCall() {
   }
 
   function onEvent(event: { type: string; error?: { message?: string } } & Partial<Delta>) {
-    if (event.type === 'session.started') { t0 = performance.now(); state.value = 'live' }
+    if (event.type === 'session.started') {
+      t0 = performance.now()
+      state.value = 'live'
+      // GPT-Live waits for the caller unless told to speak. Tested: Carrie's first words come about 1 s after this.
+      dc?.send(JSON.stringify({ type: 'session.commentary.append', event_id: crypto.randomUUID(), delegation_id: null,
+        content: greeting }))
+    }
     else if (event.type === 'session.input_transcript.delta') onDelta('elder', event as Delta)
     else if (event.type === 'session.output_transcript.delta') onDelta('carrie', event as Delta)
     else if (event.type === 'session.closed') { closed?.(); state.value = 'closed' }
@@ -140,6 +147,9 @@ export function createLiveCall() {
     pcm = []
     pcmSamples = 0
     t0 = 0
+    greeting = options.audience === 'family'
+      ? `${options.familyMember ?? 'A family member'} has just called. Greet them now: say you are Carrie, an AI helper, and ask what they would like to know about Rose.`
+      : 'Rose has just picked up the phone. Greet her now: say you are Carrie, an AI helper, and ask how she has been.'
     try {
       mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
       captureMic(mic)
