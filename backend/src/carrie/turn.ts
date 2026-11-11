@@ -71,7 +71,7 @@ const normalize = (s: string) =>
     .trim()
 
 /** Carrie never claims anything she can't play back: keep only facts quoted from the elder's own words. */
-function keepVerbatimFacts(output: z.infer<typeof TurnOutput>, elderText: string): TurnResponse {
+export function keepVerbatimFacts(output: z.infer<typeof TurnOutput>, elderText: string): TurnResponse {
   const said = normalize(elderText)
   const kept: TurnResponse['facts'] = []
   let consentIndex = -1

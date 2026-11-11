@@ -11,4 +11,9 @@ export const env = {
   /** Only needed for API keys that are not tied to a single workspace. */
   anthropicWorkspaceId: process.env.ANTHROPIC_WORKSPACE_ID?.trim() || null,
   carrieModel: process.env.CARRIE_MODEL?.trim() || 'claude-sonnet-5-5',
+  /** OpenAI: GPT-Live 1 runs the call; a text model pulls facts out beside it. */
+  openaiApiKey: process.env.OPENAI_API_KEY?.trim() || null,
+  liveModel: process.env.LIVE_MODEL?.trim() || 'gpt-live-1',
+  liveVoice: process.env.LIVE_VOICE?.trim() || 'marin',
+  factsModel: process.env.FACTS_MODEL?.trim() || 'gpt-6-luna',
 }

@@ -3,7 +3,8 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { env } from './env'
 import { carrieTurn } from './carrie/turn'
-import { TurnRequestSchema } from './carrie/types'
+import { FactsRequestSchema, LiveSessionRequestSchema, TurnRequestSchema } from './carrie/types'
+import { extractFacts, startLiveSession } from './carrie/live'
 
 const app = new Hono()
 
@@ -15,6 +16,8 @@ app.get('/api/health', (c) =>
     service: 'carrie-backend',
     carrie: env.anthropicApiKey ? 'claude' : 'script',
     model: env.anthropicApiKey ? env.carrieModel : null,
+    live: env.openaiApiKey ? env.liveModel : null,
+    facts: env.openaiApiKey ? env.factsModel : env.anthropicApiKey ? env.carrieModel : 'script',
     time: new Date().toISOString(),
   }),
 )
@@ -26,6 +29,28 @@ app.post('/api/carrie/turn', async (c) => {
     return c.json({ error: 'Invalid request body', issues: parsed.error.issues }, 400)
   }
   const { response, source } = await carrieTurn(parsed.data)
+  c.header('x-carrie-source', source)
+  return c.json(response)
+})
+
+/** GPT-Live 1 call: browser sends its WebRTC offer, gets the answer back. Audio then flows browser <-> OpenAI. */
+app.post('/api/live/session', async (c) => {
+  if (!env.openaiApiKey) return c.json({ error: 'OPENAI_API_KEY is not set in backend/.env' }, 503)
+  const parsed = LiveSessionRequestSchema.safeParse(await c.req.json().catch(() => null))
+  if (!parsed.success) return c.json({ error: 'Invalid request body', issues: parsed.error.issues }, 400)
+  try {
+    return c.json(await startLiveSession(parsed.data), 201)
+  } catch (error) {
+    console.error('[carrie] live session failed', error)
+    return c.json({ error: error instanceof Error ? error.message : 'live session failed' }, 502)
+  }
+})
+
+/** Facts from Rose's latest words, beside a live call. A TurnResponse without `reply`. */
+app.post('/api/carrie/facts', async (c) => {
+  const parsed = FactsRequestSchema.safeParse(await c.req.json().catch(() => null))
+  if (!parsed.success) return c.json({ error: 'Invalid request body', issues: parsed.error.issues }, 400)
+  const { response, source } = await extractFacts(parsed.data)
   c.header('x-carrie-source', source)
   return c.json(response)
 })

@@ -32,3 +32,23 @@ export interface TurnResponse {
   facts: ExtractedFact[]
   consentQuestion?: ConsentQuestion
 }
+
+/** Request body of POST /api/carrie/facts: same as a turn. Facts come only from `elderText`. */
+export const FactsRequestSchema = TurnRequestSchema
+export type FactsRequest = TurnRequest
+/** Response of POST /api/carrie/facts: a TurnResponse without `reply` (GPT-Live does the talking). */
+export type FactsResponse = Omit<TurnResponse, 'reply'>
+
+/** Request body of POST /api/live/session. The browser's WebRTC offer plus what Carrie should know. */
+export const LiveSessionRequestSchema = z.object({
+  sdp: z.string().min(1).max(65536),
+  pendingVoiceNotes: z.array(z.object({ from: z.string(), transcript: z.string() })).optional(),
+  /** Facts Rose shared on earlier calls, as short statements, so Carrie can follow up ("How's the knee?"). */
+  earlierFacts: z.array(z.string()).max(50).optional(),
+})
+export type LiveSessionRequest = z.infer<typeof LiveSessionRequestSchema>
+export interface LiveSessionResponse {
+  sessionId: string
+  /** The WebRTC answer. Apply it with setRemoteDescription({ type: 'answer', sdp }). */
+  sdp: string
+}
