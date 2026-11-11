@@ -9,8 +9,9 @@ Cast:
 Two voices, one man and one woman, alternate lines. Ash narrates only the opening and the close, away from the call scene.
 
 Before recording:
+- Film on a machine with **local Supabase running and `frontend/.env.local` filled in**. Without them the app shows its bundled demo data, which doesn't match this script.
 - `npm run db:reset`
-- `cd backend && npm run memory:reset`
+- `cd backend && npm run memory:reset`, then keep `npm run dev` running in `backend/`.
 - Wear headphones on Rose's phone. A loud speaker leaks Carrie's voice into the mic and garbles the captions.
 - Rose's lines are a guide. GPT-Live is live, so Carrie's exact words will differ. Keep the take where she hits the beats. Cut the call down in the edit; it doesn't need to run in real time.
 
@@ -21,7 +22,7 @@ Before recording:
 
 ## 0:08–0:45 · The call (Rose's phone, `/rose`)
 
-Carrie rings. Rose taps **Answer**, then only talks: no buttons, no screen.
+Carrie rings. Off camera, Mia taps **Check in now** on her phone; otherwise Carrie only rings at the set call time. Rose taps **Answer**, then only talks: no buttons, no screen.
 
 | | Who | Line (guide) | What it shows |
 |---|---|---|---|
@@ -36,7 +37,7 @@ Hang up. On screen, about 2 seconds: **"Here's what I'll pass on"**, under To Dr
 ## 0:45–1:08 · The family
 
 - **Mia** (`/family/mia`), about 5 s: Mum this week. **No knee**, because Rose said not Mia.
-- **Leo** (`/family/leo`), about 15 s: Carrie's card at the top: *"Grandma misses you and is baking apple cake for Saturday. You last spoke 12 days ago."* He taps play and hears **Rose's own voice**.
+- **Leo** (`/family/leo`), about 15 s: Carrie's card at the top: *"Grandma misses you and is baking apple cake for Saturday. You last spoke 12 days ago."* Then he taps play on **today's** message from the call, "tell Leo to come early Saturday", and hears **Rose's own voice**. Only things said on a real call have a recording; the seeded week plays in a labelled synthetic voice, so don't tap those on camera.
 - **B:** *Leo hadn't called in twelve days. Now he knows what to say.*
 
 ## 1:08–1:20 · The doctor (`/doctor`)
