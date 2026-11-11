@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "memory:init": "PATH=$HOME/.bun/bin:$PATH GBRAIN_HOME=$PWD/.brain gbrain init --pglite --no-embedding --non-interactive --git"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",

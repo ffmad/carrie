@@ -5,6 +5,7 @@ import { env } from './env'
 import { carrieTurn } from './carrie/turn'
 import { FactsRequestSchema, LiveSessionRequestSchema, TurnRequestSchema } from './carrie/types'
 import { extractFacts, startLiveSession } from './carrie/live'
+import { recall, remember } from './carrie/memory'
 
 const app = new Hono()
 
@@ -39,7 +40,9 @@ app.post('/api/live/session', async (c) => {
   const parsed = LiveSessionRequestSchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return c.json({ error: 'Invalid request body', issues: parsed.error.issues }, 400)
   try {
-    return c.json(await startLiveSession(parsed.data), 201)
+    const req = parsed.data
+    if (req.earlierFacts === undefined) req.earlierFacts = await recall()
+    return c.json(await startLiveSession(req), 201)
   } catch (error) {
     console.error('[carrie] live session failed', error)
     return c.json({ error: error instanceof Error ? error.message : 'live session failed' }, 502)
@@ -51,6 +54,12 @@ app.post('/api/carrie/facts', async (c) => {
   const parsed = FactsRequestSchema.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return c.json({ error: 'Invalid request body', issues: parsed.error.issues }, 400)
   const { response, source } = await extractFacts(parsed.data)
+  // Save to GBrain memory without holding up the response.
+  // One at a time: the local brain is a single PGLite database.
+  if (response.facts.length) {
+    const callId = parsed.data.callId
+    void response.facts.reduce((prev, fact) => prev.then(() => remember(fact, callId)), Promise.resolve())
+  }
   c.header('x-carrie-source', source)
   return c.json(response)
 })

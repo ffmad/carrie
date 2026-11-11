@@ -34,8 +34,11 @@ export interface TurnResponse {
 }
 
 /** Request body of POST /api/carrie/facts: same as a turn. Facts come only from `elderText`. */
-export const FactsRequestSchema = TurnRequestSchema
-export type FactsRequest = TurnRequest
+export const FactsRequestSchema = TurnRequestSchema.extend({
+  /** Which call these words came from; saved as the fact's source in Carrie's memory. */
+  callId: z.string().max(200).optional(),
+})
+export type FactsRequest = z.infer<typeof FactsRequestSchema>
 /** Response of POST /api/carrie/facts: a TurnResponse without `reply` (GPT-Live does the talking). */
 export type FactsResponse = Omit<TurnResponse, 'reply'>
 
