@@ -340,6 +340,7 @@ onBeforeUnmount(() => {
       </TransitionGroup>
 
       <footer class="oncall__controls">
+        <p v-if="call.notice" class="oncall__error" role="status">{{ call.notice }}</p>
         <p v-if="call.error" class="oncall__error" role="alert">{{ call.error }}</p>
 
         <!-- On a live call Rose answers out loud, like any phone call: nothing to press but the hang-up. -->

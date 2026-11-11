@@ -53,6 +53,8 @@ export const useCallStore = defineStore('call', () => {
   /** True when Carrie runs on GPT-Live 1 (backend has an OpenAI key): she listens and speaks herself. */
   const liveMode = ref(false)
   let live: LiveCall | null = null
+  /** Why this call is not the live voice call, when it should have been. Shown on the call screen. */
+  const notice = ref<string | null>(null)
   /** The family recording that is playing to the elder right now. */
   const playingNote = ref<VoiceNote | null>(null)
   /** A family recording has just been played: if the elder answers its sender, her words go back to them. */
@@ -101,7 +103,14 @@ export const useCallStore = defineStore('call', () => {
   async function answer() {
     if (phase.value !== 'ringing') return
     const health = await getHealth().catch(() => null)
-    if (health?.live && (await canTalkLive())) return answerLive()
+    const typed = new URLSearchParams(window.location.search).has('typed')
+    notice.value = null
+    if (health?.live && !typed) {
+      const mic = await openMic()
+      if (mic) return answerLive(mic)
+    } else if (!typed) {
+      notice.value = "Carrie's live voice is off on this machine, so this call is by tapping."
+    }
     const elder = circle.elder
     call.value = { id: crypto.randomUUID(), elderId: elder.id, startedAt: new Date().toISOString(), endedAt: null, summary: null }
     phase.value = 'talking'
@@ -202,25 +211,29 @@ export const useCallStore = defineStore('call', () => {
   }
 
   /**
-   * A live call needs a microphone, and the only reliable way to know is to ask for it: before
-   * permission is given, phones do not list their microphones at all. If it cannot be opened
-   * (no microphone, or permission refused), or the address has `?typed`, the call stays turn by turn.
+   * A live call needs a microphone, and the only reliable way to know is to open it: before
+   * permission is given, phones do not list their microphones at all. When it cannot be opened the
+   * call stays turn by turn, and `notice` says why, so nobody films the fallback by accident.
    */
-  async function canTalkLive(): Promise<boolean> {
-    if (new URLSearchParams(window.location.search).has('typed')) return false
+  async function openMic(): Promise<MediaStream | null> {
+    if (!window.isSecureContext || !navigator.mediaDevices) {
+      notice.value = 'This page is not on https, so the phone keeps the microphone closed. This call is by tapping.'
+      return null
+    }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      stream.getTracks().forEach((track) => track.stop())
-      return true
+      return await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
     } catch (cause) {
-      console.warn('[call] no microphone, staying turn by turn', cause)
-      return false
+      const refused = cause instanceof DOMException && cause.name === 'NotAllowedError'
+      notice.value = refused
+        ? 'The microphone was not allowed, so this call is by tapping. Allow it in the browser and call again.'
+        : 'No microphone could be opened here, so this call is by tapping.'
+      return null
     }
   }
 
   /* GPT-Live 1: Carrie talks on her own; the app keeps receipts, facts and consent beside the call. */
 
-  async function answerLive() {
+  async function answerLive(mic: MediaStream) {
     const elder = circle.elder
     call.value = { id: crypto.randomUUID(), elderId: elder.id, startedAt: new Date().toISOString(), endedAt: null, summary: null }
     phase.value = 'talking'
@@ -259,7 +272,15 @@ export const useCallStore = defineStore('call', () => {
       onError: (message) => (error.value = message),
     }))
     try {
-      await session.start({ pendingVoiceNotes: waiting.map((n) => ({ from: circle.byId(n.fromId)?.name ?? 'Your family', transcript: n.transcript ?? '' })) })
+      await session.start(
+        {
+          pendingVoiceNotes: waiting.map((n) => ({ from: circle.byId(n.fromId)?.name ?? 'Your family', transcript: n.transcript ?? '' })),
+          // What she said on earlier calls, from our own database, so Carrie can follow up ("Still waking at four?")
+          // on any machine. It is her own phone, so this includes what she kept to herself.
+          earlierFacts: factsStore.newestFirst.slice(0, 20).map((f) => `${f.createdAt.slice(0, 10)}: ${f.statement}`),
+        },
+        mic,
+      )
     } catch (cause) {
       error.value = cause instanceof Error ? cause.message : 'Could not start the call'
       hangUp()
@@ -531,7 +552,7 @@ export const useCallStore = defineStore('call', () => {
     void voiceNotes.addReply({ fromId: circle.elder.id, toId: sender.id, audioPath, transcript: text.trim(), inReplyTo: note.id, callId: call.value.id })
   }
 
-  return { phase, carrie, call, utterances, interim, thinking, error, pendingConsent, liveMode, playingNote, inCall, callFacts, elderTurns, ring, answer, start, reset, hearElder, answerConsent, hangUp }
+  return { phase, carrie, call, utterances, interim, thinking, error, notice, pendingConsent, liveMode, playingNote, inCall, callFacts, elderTurns, ring, answer, start, reset, hearElder, answerConsent, hangUp }
 })
 
 /** Narrow on purpose: her own fall, chest pain, not breathing, passing out. A word match, not a judgement. */

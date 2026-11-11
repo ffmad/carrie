@@ -48,8 +48,9 @@ export class LiveCall {
 
   constructor(private handlers: LiveCallHandlers) {}
 
-  async start(options: LiveCallOptions = {}) {
-    this.mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
+  async start(options: LiveCallOptions = {}, mic?: MediaStream) {
+    // The caller may hand over a microphone it already opened, so it is asked for only once.
+    this.mic = mic ?? (await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }))
     this.captureMic(this.mic)
 
     const pc = (this.pc = new RTCPeerConnection())
