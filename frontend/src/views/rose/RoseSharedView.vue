@@ -53,7 +53,7 @@ async function takeBack(fact: Fact, person: Person) {
     </header>
 
     <div class="screen__scroll shared__scroll">
-      <p class="shared__lead">Carrie only passes on what you said yes to. You can take anything back.</p>
+      <p class="shared__lead">Your family hears your everyday news. For anything about your health, Carrie asks you first. You can take anything back.</p>
 
       <section v-for="group in groups" :key="group.person.id" class="shared__group">
         <h2 class="shared__who">

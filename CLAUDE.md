@@ -10,13 +10,13 @@ The demo loop:
 
 1. **The call.** Carrie phones grandma Rose and says she is an AI in her first line. Rose only talks. Live captions on screen.
 2. **Receipts.** Every fact Carrie keeps ("knee hurts on the stairs since Sunday") links to the clip of Rose saying it. Carrie never claims something she cannot play back.
-3. **"Can I share this?"** Carrie asks before passing anything on, one person at a time ("Can I tell Mia?" does not tell Leo), and Rose can take it back.
+3. **"Can I share this?"** Everyday news reaches the family without a question. For anything about her health Carrie asks first, one person at a time ("Can I tell Dr. Chen?" does not tell Mia), and Rose can take anything back.
 4. **Family, both ways.** Mia sees the shared facts and taps one to hear Rose. Leo records a voice note; Carrie plays his real voice to Rose on the next call.
 5. **Doctor brief.** One screen for the appointment, built only from facts shared with the doctor.
 
 Cast: Rose (grandma, 78), Mia (daughter), Leo (grandson), Dr. Chen. All fictional.
 
-Decided, do not reopen: Carrie is a stylized character (the dove) and never a realistic human; she always says she is an AI; nothing is shared without a yes (the database enforces it); nobody "starts a Carrie call", each person talks to Carrie in their own way. Cut: real phone lines, accounts and sign-in, wearables, multiple languages.
+Decided, do not reopen: Carrie is a stylized character (the dove) and never a realistic human; she always says she is an AI; sharing follows what the circle agreed up front: everyday news goes to the family, anything about her health is shared only after her yes, one person at a time, and what she says to keep stays with Carrie; nobody "starts a Carrie call", each person talks to Carrie in their own way. Cut: real phone lines, accounts and sign-in, wearables, multiple languages.
 
 **What each of the four people sees, the routes, and the data layer are in [docs/app-spec.md](docs/app-spec.md). Read it before touching `frontend/`.**
 

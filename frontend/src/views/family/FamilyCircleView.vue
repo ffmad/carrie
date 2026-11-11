@@ -147,8 +147,9 @@ async function copyDoctorLink() {
       <section class="card circle__card circle__rules" aria-labelledby="circle-rules">
         <h2 id="circle-rules" class="circle__title">How sharing works</h2>
         <p>
-          Carrie asks {{ elder.name }} before passing anything on, one person at a time, and {{ elder.name }} can take it back
-          whenever she likes.
+          Everyday news goes to the family: what {{ elder.name }} cooked, who she saw, how she is feeling. Carrie asks
+          {{ elder.name }} before sharing anything about her health, one person at a time, and keeps to herself whatever
+          {{ elder.name }} says to keep. {{ elder.name }} can take anything back whenever she likes.
         </p>
         <p>
           One exception: if {{ elder.name }} mentions a fall, chest pain or sounds confused, Carrie tells her she is letting

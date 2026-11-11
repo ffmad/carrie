@@ -69,6 +69,13 @@ export interface VoiceNote {
   createdAt: string
 }
 
+/**
+ * How a fact is shared under what the circle agreed up front (set by the backend's facts step):
+ * everyday news goes to the family without a question, health and anything she might not want
+ * passed on is asked about one person at a time, and what she says to keep stays with Carrie.
+ */
+export type FactSharing = 'everyday' | 'ask' | 'private'
+
 export type RequestKind = 'ask' | 'tell' | 'checkin'
 
 /** Something the family or the doctor gives Carrie for the next call, or a "check in now". */
@@ -109,7 +116,7 @@ export interface CarrieTurnRequest {
 
 export interface CarrieTurnResponse {
   reply: string
-  facts: { category: FactCategory; statement: string; quote: string }[]
+  facts: { category: FactCategory; statement: string; quote: string; sharing?: FactSharing }[]
   /** `factIndex` points into `facts` of the same response. */
   consentQuestion?: { factIndex: number; audience: Audience; question: string; person?: string }
   /** Set by the facts step when she describes something urgent (a fall, chest pain, cannot breathe). */

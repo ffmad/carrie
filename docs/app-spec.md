@@ -4,7 +4,7 @@ Carrie is someone each of the four people talks to, not a dashboard. Nobody "sta
 
 Four rules hold everywhere:
 
-1. **Consent is per person and can be taken back.** "Can I tell Mia?" does not tell Leo. A fact lists the people who may see it (`sharedWith`). A person only ever sees facts that list them.
+1. **Sharing follows what the circle agreed up front.** Everyday news (she cooked, saw a friend, feels better) goes to the family without a question. Anything about her health is shared only after her yes, one person at a time: "Can I tell Dr. Chen?" does not tell Mia. What she says to keep stays with Carrie. She can take anything back. A fact lists the people who may see it (`sharedWith`), and a person only ever sees facts that list them. The backend marks each new fact `everyday`, `ask` or `private`.
 2. **Carrie never guesses.** If Rose has not said it, the answer is "She hasn't mentioned that."
 3. **Real voices travel both ways.** Family recordings are played to Rose; Rose's answer goes back as her own recording.
 4. **One exception to consent, stated openly:** if Rose says she fell, has chest pain, cannot breathe or passed out, Carrie tells her she is alerting the main contact, and does. (A narrow word match on her own words, not a judgement.)

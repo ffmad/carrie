@@ -6,7 +6,7 @@ import { LiveCall } from '../lib/live'
 import { playAudio, type Recording } from '../lib/recorder'
 import { speak, stopSpeaking } from '../lib/speech'
 import { clipUrl, fromCall, fromUtterance, saveRow, uploadClip } from '../lib/supabase'
-import type { Audience, Call, CarrieTurnResponse, ShareDecision, Speaker, Utterance, VoiceNote } from '../types'
+import type { Audience, Call, CarrieTurnResponse, Consent, FactSharing, ShareDecision, Speaker, Utterance, VoiceNote } from '../types'
 import { useCallsStore } from './calls'
 import { useCircleStore } from './circle'
 import { useFactsStore } from './facts'
@@ -184,9 +184,8 @@ export const useCallStore = defineStore('call', () => {
         category: extracted.category,
         statement: extracted.statement,
         quote: extracted.quote,
-        sharedWith: [],
+        ...startSharing(extracted.sharing),
         claimedBy: null,
-        consent: 'pending',
         createdAt: new Date().toISOString(),
       })
     }
@@ -355,7 +354,7 @@ export const useCallStore = defineStore('call', () => {
       await factsStore.add({
         id, callId, elderId: circle.elder.id, utteranceId,
         category: extracted.category, statement: extracted.statement, quote: extracted.quote,
-        sharedWith: [], claimedBy: null, consent: 'pending', createdAt: new Date().toISOString(),
+        ...startSharing(extracted.sharing), claimedBy: null, createdAt: new Date().toISOString(),
       })
     }
     await shareWithAddressed(text, createdIds)
@@ -526,6 +525,17 @@ export const useCallStore = defineStore('call', () => {
     for (const addressed of peopleAddressed(text, circle.people)) {
       for (const id of factsFor(text, addressed, created)) await factsStore.setSharing(id, { allow: [addressed.person.id] })
     }
+  }
+
+  /**
+   * Where a new fact starts, under what the circle agreed up front: everyday news (she cooked, saw a
+   * friend, feels better) goes to the family without a question; what she said to keep stays with
+   * Carrie; everything else waits for her yes, one person at a time.
+   */
+  function startSharing(sharing?: FactSharing): { sharedWith: string[]; consent: Consent } {
+    if (sharing === 'everyday') return { sharedWith: circle.family.map((p) => p.id), consent: 'granted' }
+    if (sharing === 'private') return { sharedWith: [], consent: 'declined' }
+    return { sharedWith: [], consent: 'pending' }
   }
 
   /** What she said out loud to a sharing question. Returns whether it answered the question. */
