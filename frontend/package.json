@@ -7,7 +7,8 @@
     "dev": "vite --port 5240 --strictPort",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview --port 5240 --strictPort",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "test": "node test/consent.replay.ts"
   },
   "dependencies": {
     "@fontsource-variable/nunito": "^5.3.0",

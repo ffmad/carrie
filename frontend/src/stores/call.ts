@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { carrieFacts, carrieTurn, getHealth } from '../lib/api'
+import { asksAbout, factsFor, offersToTell, peopleAddressed, readAnswer } from '../lib/consent'
 import { LiveCall } from '../lib/live'
 import { playAudio, type Recording } from '../lib/recorder'
 import { speak, stopSpeaking } from '../lib/speech'
@@ -29,6 +30,8 @@ export interface PendingConsent {
   factId: string | null
   /** The people a yes would tell. Sharing is per person: "Can I tell Mia?" does not tell Leo. */
   personIds: string[]
+  /** Carrie has said the question out loud. Until then, nothing the elder says can answer it. */
+  asked: boolean
 }
 
 export const useCallStore = defineStore('call', () => {
@@ -56,6 +59,8 @@ export const useCallStore = defineStore('call', () => {
   let answerableNote: VoiceNote | null = null
   /** Typed questions from the family or the doctor that Carrie still has to ask in this call (turn path). */
   let toAsk: string[] = []
+  /** The fact the last sharing question was about, in case Carrie offers to tell one more person. */
+  let lastAskedFactId: string | null = null
 
   const inCall = computed(() => phase.value === 'talking' || phase.value === 'consent')
   const callFacts = computed(() => (call.value ? factsStore.forCall(call.value.id) : []))
@@ -73,6 +78,7 @@ export const useCallStore = defineStore('call', () => {
     playingNote.value = null
     answerableNote = null
     toAsk = []
+    lastAskedFactId = null
   }
 
   /** The elder taps Carrie to talk: the same call, without the ringing. */
@@ -145,7 +151,8 @@ export const useCallStore = defineStore('call', () => {
     if (URGENT.test(said)) await raiseAlarm(said, utteranceId)
 
     if (phase.value === 'consent' && pendingConsent.value && !options.consentHandled) {
-      await applyConsent(interpretConsent(said, pendingConsent.value.audience))
+      // Only a yes or a no answers the question; anything else leaves the fact private.
+      await applySpokenAnswer(said)
     }
     pendingConsent.value = null
     phase.value = 'talking'
@@ -178,9 +185,12 @@ export const useCallStore = defineStore('call', () => {
         audience: response.consentQuestion.audience,
         factId: createdIds[response.consentQuestion.factIndex] ?? null,
         personIds: peopleAskedAbout(response.consentQuestion.audience, response.consentQuestion.question, response.consentQuestion.person),
+        asked: true, // on this path Carrie's reply is the question
       }
+      lastAskedFactId = pendingConsent.value.factId
       phase.value = 'consent'
     }
+    await shareWithAddressed(said, createdIds)
     await say(response.reply)
     if (!response.consentQuestion) await askNext()
   }
@@ -237,6 +247,7 @@ export const useCallStore = defineStore('call', () => {
       onCarrieTurn: (text) => {
         if (!call.value) return
         addUtterance('carrie', text, null, null)
+        noteCarrieTurn(text)
         if (!notesPlayed) {
           notesPlayed = true // Carrie's opening line announces the notes; play the real recordings now.
           void playVoiceNotes(waiting)
@@ -279,8 +290,8 @@ export const useCallStore = defineStore('call', () => {
     carryAnswerBack(text, audioPath)
     if (URGENT.test(text)) void raiseAlarm(text, utteranceId)
 
-    if (phase.value === 'consent' && pendingConsent.value) {
-      await applyConsent(interpretConsent(text, pendingConsent.value.audience))
+    // Only after Carrie has asked, and only a yes or a no: "Uh" or "What?" decides nothing.
+    if (phase.value === 'consent' && pendingConsent.value?.asked && (await applySpokenAnswer(text))) {
       pendingConsent.value = null
       phase.value = 'talking'
     }
@@ -305,9 +316,15 @@ export const useCallStore = defineStore('call', () => {
         sharedWith: [], claimedBy: null, consent: 'pending', createdAt: new Date().toISOString(),
       })
     }
-    if (response.consentQuestion && !pendingConsent.value) {
-      const q = response.consentQuestion
-      pendingConsent.value = { question: q.question, audience: q.audience, factId: createdIds[q.factIndex] ?? null, personIds: peopleAskedAbout(q.audience, q.question, q.person) }
+    await shareWithAddressed(text, createdIds)
+    const q = response.consentQuestion
+    const askedFact = q ? factsStore.byId(createdIds[q.factIndex] ?? '') : null
+    const askedPeople = q ? peopleAskedAbout(q.audience, q.question, q.person) : []
+    // No need to ask when she has just said it herself ("tell my grandson…").
+    const alreadyTold = !!askedFact && askedPeople.length > 0 && askedPeople.every((id) => askedFact.sharedWith.includes(id))
+    if (q && !pendingConsent.value && !alreadyTold) {
+      pendingConsent.value = { question: q.question, audience: q.audience, factId: createdIds[q.factIndex] ?? null, personIds: askedPeople, asked: false }
+      lastAskedFactId = pendingConsent.value.factId
       phase.value = 'consent'
       live?.instruct(`As soon as Rose finishes her current thought, ask her this sharing question in your own warm words: "${q.question}" Ask only about this one thing and this one audience.`)
     }
@@ -437,6 +454,46 @@ export const useCallStore = defineStore('call', () => {
     }
   }
 
+  /**
+   * Live call: what Carrie just said. Two things matter for sharing:
+   *  - she has now asked the question she was given, so the next yes or no answers it;
+   *  - she offers on her own to tell one more person about the same thing ("share this with Mia too?").
+   */
+  function noteCarrieTurn(text: string) {
+    const pending = pendingConsent.value
+    if (pending) {
+      const people = pending.personIds.map((id) => circle.byId(id)).filter((p) => !!p)
+      if (!pending.asked && asksAbout(text, people, pending.audience)) pending.asked = true
+      return
+    }
+    const fact = lastAskedFactId ? factsStore.byId(lastAskedFactId) : null
+    const person = fact ? offersToTell(text, circle.people) : null
+    if (!fact || !person || fact.sharedWith.includes(person.id)) return
+    pendingConsent.value = { question: text, audience: person.role === 'doctor' ? 'doctor' : 'family', factId: fact.id, personIds: [person.id], asked: true }
+    phase.value = 'consent'
+  }
+
+  /**
+   * "Tell my grandson to call me next weekend": saying it is the yes for that person, so the facts
+   * that are that message go to him, with her voice as the receipt.
+   */
+  async function shareWithAddressed(text: string, factIds: string[]) {
+    const created = factIds.map((id) => factsStore.byId(id)).filter((f) => !!f)
+    if (!created.length) return
+    for (const addressed of peopleAddressed(text, circle.people)) {
+      for (const id of factsFor(text, addressed, created)) await factsStore.setSharing(id, { allow: [addressed.person.id] })
+    }
+  }
+
+  /** What she said out loud to a sharing question. Returns whether it answered the question. */
+  async function applySpokenAnswer(text: string): Promise<boolean> {
+    const pending = pendingConsent.value
+    if (!pending?.factId) return false
+    const answer = readAnswer(text, pending, circle.people)
+    if (answer.allow.length || answer.deny.length) await factsStore.setSharing(pending.factId, answer)
+    return answer.answered
+  }
+
   /** Who a yes would tell: the doctor, or the family members named in the question (the main contact if none is). */
   function peopleAskedAbout(audience: Audience, question: string, person?: string): string[] {
     // The backend names the one person when it can; otherwise read the name out of the question.
@@ -476,31 +533,6 @@ export const useCallStore = defineStore('call', () => {
 
 /** Narrow on purpose: her own fall, chest pain, not breathing, passing out. A word match, not a judgement. */
 const URGENT = /\b(i|i've|i have|i just)\s+(fell|fallen|had a fall)\b|\bchest (pain|hurts)\b|\bcan(?:'|no)t breathe\b|\b(passed out|fainted|blacked out)\b/i
-
-const FAMILY_WORDS = /\b(daughter|family|mia|leo|grandson|son|kids|children)\b/
-const DOCTOR_WORDS = /\b(doctor|dr|chen|physician|gp)\b/
-const NEGATION = /\b(no|not|don't|dont|do not|never|nobody|rather not|private|between us)\b/
-
-/**
- * Stub: reads a spoken answer such as "tell the doctor, but not my daughter".
- * Each clause sets the audiences it names; a bare yes/no answers the audience asked about.
- * Good enough for the demo; the backend should own this once it returns a consent decision.
- */
-export function interpretConsent(text: string, asked: Audience): ShareDecision {
-  const decision: ShareDecision = {}
-  let general: boolean | null = null
-  for (const clause of text.toLowerCase().split(/,|;|\.|\bbut\b|\band\b/)) {
-    if (!clause.trim()) continue
-    const allow = !NEGATION.test(clause)
-    const family = FAMILY_WORDS.test(clause)
-    const doctor = DOCTOR_WORDS.test(clause)
-    if (family) decision.family = allow
-    if (doctor) decision.doctor = allow
-    if (!family && !doctor && general === null) general = allow
-  }
-  if (decision[asked] === undefined) decision[asked] = general ?? false
-  return decision
-}
 
 function describeDecision(decision: ShareDecision): string {
   if (decision.family && decision.doctor) return 'Yes, you can tell my family and the doctor.'
