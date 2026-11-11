@@ -1,4 +1,4 @@
-# Carrie: video script (2:00)
+# Carrie: video script (1:30)
 
 Built on the demo week in `supabase/seed.sql`. Carrie's memory (GBrain) holds the same week: `cd backend && npm run memory:reset`.
 
@@ -6,54 +6,47 @@ Cast:
 - **Ash** plays **Rose** on the call, and is narrator **A**.
 - **Quentin** is narrator **B**, and records **Leo's** voice note.
 
-Two voices, one man and one woman, alternate lines, so the narration never sounds like Rose. Ash narrates only the opening and the close, away from the call scene.
+Two voices, one man and one woman, alternate lines. Ash narrates only the opening and the close, away from the call scene.
 
 Before recording:
+- Film on a machine with **local Supabase running and `frontend/.env.local` filled in**. Without them the app shows its bundled demo data, which doesn't match this script.
 - `npm run db:reset`
-- `cd backend && npm run memory:reset`
+- `cd backend && npm run memory:reset`, then keep `npm run dev` running in `backend/`.
 - Wear headphones on Rose's phone. A loud speaker leaks Carrie's voice into the mic and garbles the captions.
-- Rose's lines are a guide. GPT-Live is live, so Carrie's exact words will differ. Keep the takes where she hits the beats below.
+- Rose's lines are a guide. GPT-Live is live, so Carrie's exact words will differ. Keep the take where she hits the beats. Cut the call down in the edit; it doesn't need to run in real time.
 
-## 0:00–0:12 · The problem (voice-over, Rose alone at her window)
+## 0:00–0:08 · Opening (voice-over, Rose's phone ringing)
 
-> **A:** In Japan, nearly one in three people is over 65. Korea and Taiwan just crossed one in five. The US is at nearly one in five, and climbing.
-> **B:** Their families love them, but they're busy, far away, and often don't know what to say when they call.
+> **A:** One in five people in Taiwan and Korea is over 65. The US is close behind.
+> **B:** Families care, but often don't know what to say when they call. Meet Carrie.
 
-(Figures for 2025: Japan 29.7%, Korea 20% from late 2024, Taiwan 20.06%, US 18.9%. Sources: Taiwan Ministry of the Interior, Statistics Korea, and US Census Bureau/PRB as reported in the press.)
-> **A:** Meet Carrie, an AI that phones Grandma every day.
-> **B:** She doesn't replace your call. She gives you a reason to make it.
+## 0:08–0:45 · The call (Rose's phone, `/rose`)
 
-## 0:12–0:55 · The call (Rose's phone, `/rose`)
-
-Carrie rings at 10:00. Rose taps **Answer**. From then on she only talks: no buttons, no screen.
+Carrie rings. Off camera, Mia taps **Check in now** on her phone; otherwise Carrie only rings at the set call time. Rose taps **Answer**, then only talks: no buttons, no screen.
 
 | | Who | Line (guide) | What it shows |
 |---|---|---|---|
-| 1 | Carrie | "Hi Rose, it's Carrie, your AI helper…" | **She says she's an AI**, first line |
-| 2 | Carrie | "…are you still waking up at four?" | **Memory** (GBrain): she remembers this week |
-| 3 | Rose | "A bit better. But my knee's been bad on the stairs since Sunday." | Something new. A **fact chip** appears, with her clip |
-| 4 | Carrie | "Can I tell Dr. Chen about your knee?" | **Asks first, names one person** |
-| 5 | Rose | "Yes, tell the doctor. Not Mia though, she'll only fuss." | **Per-person consent** |
-| 6 | Carrie | "Okay, I'll tell Dr. Chen." | |
-| 7 | Carrie | Dr. Chen's question: "does the dizziness come after your morning pill?" | **Carrie carries the doctor's question** (pending `ask` in the seed) |
-| 8 | Rose | "Now you mention it… yes, about half an hour after." | A fact, shared with Dr. Chen |
-| 9 | Rose | "And tell Leo to come early on Saturday, the cake's best warm." | A message back to the family |
+| 1 | Carrie | "Hi Rose, it's Carrie, your AI helper… are you still waking up at four?" | **Says she's an AI**, and **remembers** this week (GBrain) |
+| 2 | Rose | "A bit better. But my knee's been bad on the stairs since Sunday." | **Fact chip** appears, with her clip |
+| 3 | Carrie | "Can I tell Dr. Chen about your knee?" | **Asks first, names one person** |
+| 4 | Rose | "Yes, tell the doctor. Not Mia, she'll only fuss." | **Per-person consent** |
+| 5 | Rose | "And tell Leo to come early Saturday, the cake's best warm." | A message back to the family |
 
-Hang up. On screen: **"Here's what I'll pass on"**, under To Dr. Chen, To Leo, and Just between us.
+Hang up. On screen, about 2 seconds: **"Here's what I'll pass on"**, under To Dr. Chen, To Leo, and Just between us.
 
-## 0:55–1:25 · The family (Mia's phone, then Leo's)
+## 0:45–1:08 · The family
 
-- **Mia** (`/family/mia`): Mum this week. She sees the eye-clinic request and taps **I'll do it**. **The knee is not there**, because Rose said not Mia. Caption: *Only what Mum said Mia can know.*
-- **Leo** (`/family/leo`): Carrie's card at the top: *"Grandma misses you and is baking apple cake for Saturday. You last spoke 12 days ago."* (`/api/carrie/family-update`). He taps play and hears **Rose's own voice**: "I do miss that boy." He records a voice note back.
+- **Mia** (`/family/mia`), about 5 s: Mum this week. **No knee**, because Rose said not Mia.
+- **Leo** (`/family/leo`), about 15 s: Carrie's card at the top: *"Grandma misses you and is baking apple cake for Saturday. You last spoke 12 days ago."* Then he taps play on **today's** message from the call, "tell Leo to come early Saturday", and hears **Rose's own voice**. Only things said on a real call have a recording; the seeded week plays in a labelled synthetic voice, so don't tap those on camera.
 - **B:** *Leo hadn't called in twelve days. Now he knows what to say.*
 
-## 1:25–1:45 · The doctor (`/doctor`)
+## 1:08–1:20 · The doctor (`/doctor`)
 
-One page before the visit: knee since Sunday and dizziness about 30 minutes after the morning pill, each with **her exact words and a play button**. The missed-pill strip. "Woken at 4 a.m. came up 2 times."
+The knee since Sunday, with **her exact words and a play button**, and the missed-pill strip.
 
-## 1:45–2:00 · Why you can trust it (voice-over over the receipts)
+## 1:20–1:30 · Close (voice-over over the receipts)
 
-> **B:** AI can be wrong. So Carrie never makes anything up. Every fact comes from Rose's own words, with the recording to prove it.
-> **A:** Carrie only carries. Rose decides who hears what.
-> **B:** GPT-Live 1 for the voice, GBrain for memory with sources, and consent on every fact.
-> **A:** Carrie. More calls, not fewer.
+> **B:** Carrie never makes anything up. Every fact is Rose's own words, and Rose decides who hears it.
+> **A:** Carrie. She doesn't replace your call. She gives you a reason to make it.
+
+(Figures for 2025: Taiwan 20.06%, Korea 20% from late 2024, US 18.9%, Japan 29.7%.)
