@@ -12,7 +12,7 @@ What we say is in [video-script.md](video-script.md). This file covers what we d
 
 Run each in its own terminal and leave it running.
 
-1. `git pull --rebase`, after merging PR #4 (everyday facts go to the family without asking; the script depends on it).
+1. `git pull --rebase`
 2. Database: `npm run db:start`, then `npm run db:reset`. This gives a clean demo week. `frontend/.env.local` must have `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 3. Backend:
    - Put your OpenAI key in `backend/.env` (`OPENAI_API_KEY=`).
