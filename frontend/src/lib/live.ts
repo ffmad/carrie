@@ -108,6 +108,9 @@ export class LiveCall {
     switch (event.type) {
       case 'session.started':
         this.t0 = performance.now()
+        // GPT-Live waits for the caller unless told to speak (found on the first real call, see liveCall.ts).
+        this.dc?.send(JSON.stringify({ type: 'session.commentary.append', event_id: crypto.randomUUID(), delegation_id: null,
+          content: 'Rose has just picked up the phone. Greet her now: say you are Carrie, an AI helper, and ask how she has been.' }))
         this.handlers.onStarted?.()
         break
       case 'session.input_transcript.delta':
