@@ -1,7 +1,10 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Call, CareRequest, CareSettings, Fact, Person, Utterance, VoiceNote } from '../types'
 
-const url = import.meta.env.VITE_SUPABASE_URL
+const localUrl = import.meta.env.VITE_SUPABASE_URL
+// Opened from another device, 127.0.0.1 would be that device: go through the dev server instead (vite.config.ts).
+const onThisMachine = typeof window === 'undefined' || ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname)
+const url = localUrl && !onThisMachine ? `${window.location.origin}/supabase` : localUrl
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 /** Null when the env vars are not set: stores then run on the bundled demo data. */
