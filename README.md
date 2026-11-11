@@ -4,7 +4,9 @@
 
 "Carrie" is *care* + *carry*. She doesn't replace your call. She gives you a reason to make it.
 
-**▶ Demo video (under 2 minutes):** https://github.com/ffmad/carrie/releases/download/demo-video/carrie-demo.mp4
+**▶ Demo video (90 seconds):** https://youtu.be/Ol4NZr3_fLU
+
+The call on its own, as a file: https://github.com/ffmad/carrie/releases/download/demo-video/carrie-demo.mp4
 
 Built in one evening at c0mpiled-18, the YC Startup School Hackathon in Taipei, 11 November 2026.
 
