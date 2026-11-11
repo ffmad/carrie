@@ -1,15 +1,20 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { Utterance } from '../types'
 
 /**
  * Large live captions of the call, on Rose's phone. Carrie's words sit on the left,
  * Rose's on the right, and a family recording is labelled with whose voice it is.
- * `interim` is what Rose is saying right now.
+ * `interim` is what Rose is saying right now, `carrieInterim` what Carrie is saying right now.
+ *
+ * It reads as one conversation that grows: lines by the same speaker in a row are one bubble
+ * (a pause in the middle of a sentence does not start a new one), and words being spoken appear
+ * in the bubble they will stay in, so nothing flickers when a line is finished.
  */
 const props = defineProps<{
   utterances: (Pick<Utterance, 'id' | 'speaker' | 'text'> & { speakerId?: string | null })[]
   interim?: string
+  carrieInterim?: string
   /** Person id to first name, to label a family recording ("Leo's voice"). */
   names?: Record<string, string>
 }>()
@@ -21,12 +26,38 @@ function labelFor(line: { speaker: Utterance['speaker']; speakerId?: string | nu
   return name ? `${name}'s voice` : 'A message for you'
 }
 
+interface Bubble {
+  speaker: Utterance['speaker']
+  speakerId?: string | null
+  text: string
+  /** Still being spoken. */
+  live: boolean
+}
+
+const bubbles = computed(() => {
+  const out: Bubble[] = []
+  const add = (speaker: Utterance['speaker'], text: string, live: boolean, speakerId?: string | null) => {
+    const last = out[out.length - 1]
+    // A family recording is always its own bubble: it is someone else's voice.
+    if (last && last.speaker === speaker && speaker !== 'family') {
+      last.text = `${last.text} ${text}`
+      last.live = live
+    } else {
+      out.push({ speaker, speakerId, text, live })
+    }
+  }
+  for (const line of props.utterances) add(line.speaker, line.text, false, line.speakerId)
+  if (props.carrieInterim) add('carrie', props.carrieInterim, true)
+  if (props.interim) add('elder', props.interim, true)
+  return out
+})
+
 const list = ref<HTMLElement | null>(null)
 async function toLatest(smooth = true) {
   await nextTick()
   list.value?.scrollTo({ top: list.value.scrollHeight, behavior: smooth ? 'smooth' : 'auto' })
 }
-watch(() => [props.utterances.length, props.interim], () => toLatest())
+watch(() => [props.utterances.length, props.interim, props.carrieInterim], () => toLatest())
 
 // Keep the newest line in view when the space changes too (a question from Carrie appears under the captions).
 let resizes: ResizeObserver | null = null
@@ -41,19 +72,16 @@ onBeforeUnmount(() => resizes?.disconnect())
 
 <template>
   <div ref="list" class="captions" aria-live="polite">
-    <p v-if="!utterances.length && !interim" class="captions__empty">Just a moment…</p>
+    <p v-if="!bubbles.length" class="captions__empty">Just a moment…</p>
+    <!-- Keyed by place and speaker, so a bubble keeps its element when its words go from spoken to said. -->
     <p
-      v-for="(line, index) in utterances"
-      :key="line.id"
+      v-for="(bubble, index) in bubbles"
+      :key="`${index}:${bubble.speaker}`"
       class="captions__line"
-      :class="[`captions__line--${line.speaker}`, { 'captions__line--earlier': interim || index < utterances.length - 1 }]"
+      :class="[`captions__line--${bubble.speaker}`, { 'captions__line--earlier': index < bubbles.length - 1 }]"
     >
-      <span class="captions__who" :class="{ 'captions__who--hidden': line.speaker !== 'family' }">{{ labelFor(line) }}</span>
-      {{ line.text }}
-    </p>
-    <p v-if="interim" class="captions__line captions__line--elder captions__line--interim">
-      <span class="captions__who captions__who--hidden">You</span>
-      {{ interim }}
+      <span class="captions__who" :class="{ 'captions__who--hidden': bubble.speaker !== 'family' }">{{ labelFor(bubble) }}</span>
+      {{ bubble.text }}
     </p>
   </div>
 </template>
@@ -140,9 +168,6 @@ onBeforeUnmount(() => resizes?.disconnect())
   background: var(--color-accent-soft);
 }
 
-.captions__line--interim {
-  opacity: 0.75;
-}
 
 @keyframes caption-in {
   from {

@@ -165,7 +165,8 @@ const hint = computed(() => {
   if (showConsent.value) return recognitionSupported ? 'Tell Carrie, or tap an answer' : 'Tap an answer'
   return recognitionSupported ? 'Your turn. Tap to speak.' : 'Your turn'
 })
-const doveSize = computed(() => (showConsent.value ? 104 : call.liveMode ? 200 : 148))
+// Once the two are talking, the dove makes room so the conversation stays readable as it grows.
+const doveSize = computed(() => (showConsent.value ? 104 : call.liveMode ? (call.utterances.length > 1 ? 128 : 200) : 148))
 const nextDemoLine = computed(() => demoElderLines[call.elderTurns] ?? null)
 
 /**
@@ -327,7 +328,13 @@ onBeforeUnmount(() => {
         <p v-else class="oncall__hint" role="status">{{ hint }}</p>
       </header>
 
-      <CaptionStream class="oncall__captions" :utterances="call.utterances" :interim="call.interim" :names="namesById" />
+      <CaptionStream
+        class="oncall__captions"
+        :utterances="call.utterances"
+        :interim="call.interim"
+        :carrie-interim="call.carrieInterim"
+        :names="namesById"
+      />
 
       <TransitionGroup v-if="!showConsent" tag="ul" name="chip" class="oncall__chips" aria-label="What Carrie will remember">
         <li v-for="chip in chips" :key="chip.id" class="chip" :class="{ 'chip--shared': chip.shared }">

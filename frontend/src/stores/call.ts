@@ -47,6 +47,8 @@ export const useCallStore = defineStore('call', () => {
   const utterances = ref<Utterance[]>([])
   /** What the elder is saying right now, before it becomes an utterance. */
   const interim = ref('')
+  /** What Carrie is saying right now on a live call, before her turn is complete. */
+  const carrieInterim = ref('')
   const thinking = ref(false)
   const error = ref<string | null>(null)
   const pendingConsent = ref<PendingConsent | null>(null)
@@ -75,6 +77,7 @@ export const useCallStore = defineStore('call', () => {
     call.value = null
     utterances.value = []
     interim.value = ''
+    carrieInterim.value = ''
     error.value = null
     pendingConsent.value = null
     playingNote.value = null
@@ -204,6 +207,17 @@ export const useCallStore = defineStore('call', () => {
     if (!response.consentQuestion) await askNext()
   }
 
+  /** Her clip has been stored: point the line (and so every fact taken from it) at the recording. */
+  function attachClip(utteranceId: string, audioPath: string): string {
+    const index = utterances.value.findIndex((u) => u.id === utteranceId)
+    if (index < 0) return audioPath
+    const updated = { ...utterances.value[index]!, audioPath }
+    utterances.value = utterances.value.map((u, i) => (i === index ? updated : u))
+    factsStore.addReceipt(updated)
+    void saveRow('utterances', fromUtterance(updated))
+    return audioPath
+  }
+
   /** One carried question at a time, and never on top of a sharing question. */
   async function askNext() {
     if (!inCall.value || phase.value !== 'talking' || !toAsk.length) return
@@ -257,10 +271,13 @@ export const useCallStore = defineStore('call', () => {
       },
       onElderPartial: (text) => (interim.value = text),
       onElderTurn: (text, clip) => void hearElderLive(text, clip),
-      onCarrieSpeaking: (speaking) => {
+      onCarrieSpeaking: (speaking, textSoFar) => {
         if (inCall.value) carrie.value = speaking ? 'speaking' : 'listening'
+        // Her words show while she says them. They are only cleared when the finished line takes their place.
+        if (speaking) carrieInterim.value = textSoFar
       },
       onCarrieTurn: (text) => {
+        carrieInterim.value = ''
         if (!call.value) return
         addUtterance('carrie', text, null, null)
         noteCarrieTurn(text)
@@ -304,14 +321,15 @@ export const useCallStore = defineStore('call', () => {
 
   async function hearElderLive(text: string, clip: Recording | null) {
     if (!call.value || !inCall.value) return
-    interim.value = ''
     const callId = call.value.id
     const utteranceId = crypto.randomUUID()
-    const audioPath = clip ? await uploadClip(`calls/${callId}/${utteranceId}.${clip.extension}`, clip.blob) : null
     const history = historyForCarrie()
-    const utterance = addUtterance('elder', text, audioPath, circle.elder.id, utteranceId)
+    // The line joins the conversation the moment she stops; her clip is attached when it has been stored.
+    interim.value = ''
+    const utterance = addUtterance('elder', text, null, circle.elder.id, utteranceId)
     factsStore.addReceipt(utterance)
-    carryAnswerBack(text, audioPath)
+    const stored = clip ? uploadClip(`calls/${callId}/${utteranceId}.${clip.extension}`, clip.blob).then((path) => attachClip(utteranceId, path)) : Promise.resolve(null)
+    void stored.then((audioPath) => carryAnswerBack(text, audioPath))
     if (URGENT.test(text)) void raiseAlarm(text, utteranceId)
 
     // Only after Carrie has asked, and only a yes or a no: "Uh" or "What?" decides nothing.
@@ -385,6 +403,7 @@ export const useCallStore = defineStore('call', () => {
     phase.value = call.value ? 'ended' : 'idle'
     carrie.value = 'idle'
     interim.value = ''
+    carrieInterim.value = ''
     pendingConsent.value = null
   }
 
@@ -552,7 +571,7 @@ export const useCallStore = defineStore('call', () => {
     void voiceNotes.addReply({ fromId: circle.elder.id, toId: sender.id, audioPath, transcript: text.trim(), inReplyTo: note.id, callId: call.value.id })
   }
 
-  return { phase, carrie, call, utterances, interim, thinking, error, notice, pendingConsent, liveMode, playingNote, inCall, callFacts, elderTurns, ring, answer, start, reset, hearElder, answerConsent, hangUp }
+  return { phase, carrie, call, utterances, interim, carrieInterim, thinking, error, notice, pendingConsent, liveMode, playingNote, inCall, callFacts, elderTurns, ring, answer, start, reset, hearElder, answerConsent, hangUp }
 })
 
 /** Narrow on purpose: her own fall, chest pain, not breathing, passing out. A word match, not a judgement. */
