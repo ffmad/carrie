@@ -12,7 +12,7 @@ What we say is in [video-script.md](video-script.md). This file covers what we d
 
 Run each in its own terminal and leave it running.
 
-1. `git pull --rebase`
+1. `git pull --rebase`, after merging PR #4 (everyday facts go to the family without asking; the script depends on it).
 2. Database: `npm run db:start`, then `npm run db:reset`. This gives a clean demo week. `frontend/.env.local` must have `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 3. Backend:
    - Put your OpenAI key in `backend/.env` (`OPENAI_API_KEY=`).
@@ -36,11 +36,12 @@ The call has to come first: the family and doctor screens show what Rose says in
 1. Rose's phone: start **iOS screen recording** (Control Centre). Leave **mic on**, so both voices are recorded.
 2. Laptop: on `/family/mia`, tap **Check in now**.
 3. Phone rings. Ash taps **Answer** and talks. Ash's lines, loosely, waiting for Carrie each time:
-   1. *(Carrie asks if Rose is still waking at four)* "A bit better. But my knee's been bad on the stairs since Sunday."
-   2. *(Carrie asks "Can I tell Dr. Chen about your knee?")* "Yes, tell the doctor. Not Mia, she'll only fuss."
-   3. *(Carrie carries Dr. Chen's question about the dizziness)* "Now you mention it… yes, about half an hour after the pill."
-   4. "And tell Leo to come early on Saturday, the cake's best warm."
-   5. "That's all, dear. Bye now." Tap **Hang up**.
+   1. *(Carrie asks if Rose is still waking at four)* "A bit better. I baked the apple cake this morning, the kitchen smells lovely." Carrie should **not** ask to share this.
+   2. "But my knee's been bad on the stairs since Sunday."
+   3. *(Carrie asks "Can I tell Dr. Chen about your knee?")* "Yes, tell the doctor. Not Mia, she'll only fuss."
+   4. *(Carrie carries Dr. Chen's question about the dizziness)* "Now you mention it… yes, about half an hour after the pill."
+   5. "And tell Leo to come early on Saturday, the cake's best warm."
+   6. "That's all, dear. Bye now." Tap **Hang up**.
 4. Keep the "Here's what I'll pass on" screen up for 3 seconds, then stop recording.
 5. Bad take? Run `db:reset` and `memory:reset`, then do it again. Two or three takes at most.
 
@@ -48,7 +49,7 @@ The call has to come first: the family and doctor screens show what Rose says in
 Before Shot 1, or with one extra Check in now afterwards: film the phone lying on a table as "Carrie is calling" comes up, and a hand picks it up. 3 seconds. This is the opening shot.
 
 ### Shot 3 · Mia (screen recording, ~6 s)
-Open `/family/mia` and go to the Mum tab. Scroll slowly. **The knee is not there**, because Rose said not Mia. Optional: tap **I'll do it** on the eye-clinic request.
+Open `/family/mia` and go to the Mum tab. Scroll slowly. **The apple cake is there** without anyone asking, and **the knee is not**, because Rose said not Mia. Optional: tap **I'll do it** on the eye-clinic request.
 
 ### Shot 4 · Leo (screen recording, ~15 s)
 Open `/family/leo`.

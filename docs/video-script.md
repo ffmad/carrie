@@ -27,16 +27,17 @@ Carrie rings. Off camera, Mia taps **Check in now** on her phone; otherwise Carr
 | | Who | Line (guide) | What it shows |
 |---|---|---|---|
 | 1 | Carrie | "Hi Rose, it's Carrie, your AI helper… are you still waking up at four?" | **Says she's an AI**, and **remembers** this week (GBrain) |
-| 2 | Rose | "A bit better. But my knee's been bad on the stairs since Sunday." | **Fact chip** appears, with her clip |
-| 3 | Carrie | "Can I tell Dr. Chen about your knee?" | **Asks first, names one person** |
-| 4 | Rose | "Yes, tell the doctor. Not Mia, she'll only fuss." | **Per-person consent** |
-| 5 | Rose | "And tell Leo to come early Saturday, the cake's best warm." | A message back to the family |
+| 2 | Rose | "A bit better. I baked the apple cake this morning, the kitchen smells lovely." | **Everyday**: goes to the family **without asking** (the circle agreed up front) |
+| 3 | Rose | "But my knee's been bad on the stairs since Sunday." | **Health**: a fact chip appears with her clip, and this one needs her yes |
+| 4 | Carrie | "Can I tell Dr. Chen about your knee?" | **Asks first, names one person** |
+| 5 | Rose | "Yes, tell the doctor. Not Mia, she'll only fuss." | **Per-person consent** |
+| 6 | Rose | "And tell Leo to come early Saturday, the cake's best warm." | A message back to the family |
 
-Hang up. On screen, about 2 seconds: **"Here's what I'll pass on"**, under To Dr. Chen, To Leo, and Just between us.
+Carrie does **not** ask about the cake; that's the point. Hang up. On screen, about 2 seconds: **"Here's what I'll pass on"**: the cake under To Mia and To Leo, the knee under To Dr. Chen.
 
 ## 0:45–1:08 · The family
 
-- **Mia** (`/family/mia`), about 5 s: Mum this week. **No knee**, because Rose said not Mia.
+- **Mia** (`/family/mia`), about 5 s: Mum this week. **The apple cake is there** (everyday news arrives on its own), and **the knee is not** (health waits for Rose's yes, and she said not Mia).
 - **Leo** (`/family/leo`), about 15 s: Carrie's card at the top: *"Grandma misses you and is baking apple cake for Saturday. You last spoke 12 days ago."* Then he taps play on **today's** message from the call, "tell Leo to come early Saturday", and hears **Rose's own voice**. Only things said on a real call have a recording; the seeded week plays in a labelled synthetic voice, so don't tap those on camera.
 - **B:** *Leo hadn't called in twelve days. Now he knows what to say.*
 
@@ -46,7 +47,7 @@ The knee since Sunday, with **her exact words and a play button**, and the misse
 
 ## 1:20–1:30 · Close (voice-over over the receipts)
 
-> **B:** Carrie never makes anything up. Every fact is Rose's own words, and Rose decides who hears it.
+> **B:** Carrie never makes anything up. Everyday news flows to the family; anything about her health waits for Rose's yes.
 > **A:** Carrie. She doesn't replace your call. She gives you a reason to make it.
 
 (Figures for 2025: Taiwan 20.06%, Korea 20% from late 2024, US 18.9%, Japan 29.7%.)
