@@ -1,0 +1,97 @@
+/*
+ * Design tokens: the single source of truth for color, type, radius and spacing.
+ * Components only use these variables, so a redesign is a change to this file.
+ * (Mirror --color-primary / --color-bg in vite.config.ts for the PWA manifest.)
+ */
+:root {
+  /* Type */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-display: var(--font-sans);
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.625rem;
+  --text-2xl: 2.125rem;
+  --leading: 1.45;
+  --weight-normal: 400;
+  --weight-medium: 550;
+  --weight-bold: 700;
+
+  /* Surfaces and text */
+  --color-bg: #faf6f0;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f3ece2;
+  --color-border: #e6dccf;
+  --color-text: #2b2622;
+  --color-text-muted: #756a61;
+
+  /* Brand and states */
+  --color-primary: #c8643c;
+  --color-primary-contrast: #ffffff;
+  --color-primary-soft: #f7e3d8;
+  --color-accent: #3f7d6e;
+  --color-accent-contrast: #ffffff;
+  --color-accent-soft: #dcefe9;
+  --color-danger: #b3402e;
+  --color-danger-contrast: #ffffff;
+  --color-danger-soft: #f8dfda;
+
+  /* Sharing audiences */
+  --color-share-private-bg: #ece7e1;
+  --color-share-private-fg: #5a514a;
+  --color-share-family-bg: #f7e3d8;
+  --color-share-family-fg: #8a3f20;
+  --color-share-doctor-bg: #dcefe9;
+  --color-share-doctor-fg: #25574b;
+  --color-share-pending-bg: #fbf0cf;
+  --color-share-pending-fg: #7a5a0c;
+
+  /* People (avatar_color values in the demo data point at these) */
+  --color-person-rose: #c8643c;
+  --color-person-mia: #7a6bb0;
+  --color-person-leo: #3d86b8;
+  --color-person-chen: #3f7d6e;
+  --color-person-contrast: #ffffff;
+
+  /* Carrie placeholder avatar */
+  --color-carrie-body: #f2b89b;
+  --color-carrie-shade: #e79a78;
+  --color-carrie-face: #2b2622;
+  --color-carrie-glow: #f7e3d8;
+
+  /* Desktop phone frame */
+  --color-backdrop: #e9e1d6;
+  --color-frame: #2b2622;
+  --phone-width: 390px;
+  --phone-height: 844px;
+  --frame-border: 10px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+  --radius-frame: 46px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+
+  /* Sizes */
+  --tap-min: 48px;
+  --tap-big: 64px;
+
+  /* Elevation and motion */
+  --shadow-card: 0 1px 2px rgb(43 38 34 / 6%), 0 4px 14px rgb(43 38 34 / 6%);
+  --shadow-frame: 0 30px 80px rgb(43 38 34 / 28%);
+  --duration-fast: 150ms;
+  --duration-slow: 400ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}

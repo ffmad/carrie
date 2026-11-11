@@ -1,0 +1,25 @@
+{
+  "name": "carrie-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5240 --strictPort",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview --port 5240 --strictPort",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.119.0",
+    "pinia": "^4.1.0",
+    "vue": "^3.5.45",
+    "vue-router": "^5.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.10",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.8",
+    "vite-plugin-pwa": "^2.0.0",
+    "vue-tsc": "^3.3.14"
+  }
+}

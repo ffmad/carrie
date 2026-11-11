@@ -1,0 +1,13 @@
+node_modules/
+dist/
+dev-dist/
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+*.tsbuildinfo
+# Private JWT signing key of each Supabase install
+supabase/signing_keys.json
+supabase/.temp/
+supabase/.branches/
