@@ -2,6 +2,12 @@
 
 Built on the demo week in `supabase/seed.sql`. Carrie's memory (GBrain) holds the same week: `cd backend && npm run memory:reset`.
 
+Cast:
+- **Ash** plays **Rose** on the call, and is narrator **A**.
+- **Quentin** is narrator **B**, and records **Leo's** voice note.
+
+Two voices, one man and one woman, alternate lines, so the narration never sounds like Rose. Ash narrates only the opening and the close, away from the call scene.
+
 Before recording:
 - `npm run db:reset`
 - `cd backend && npm run memory:reset`
@@ -10,8 +16,12 @@ Before recording:
 
 ## 0:00–0:12 · The problem (voice-over, Rose alone at her window)
 
-> One in five people in Taiwan is over 65. Families love them, but they're busy, far away, and often don't know what to say when they call.
-> Meet Carrie. She doesn't replace the call. She gives you a reason to make it.
+> **A:** In Japan, nearly one in three people is over 65. Korea and Taiwan just crossed one in five. The US is at nearly one in five, and climbing.
+> **B:** Their families love them, but they're busy, far away, and often don't know what to say when they call.
+
+(Figures for 2025: Japan 29.7%, Korea 20% from late 2024, Taiwan 20.06%, US 18.9%. Sources: Taiwan Ministry of the Interior, Statistics Korea, and US Census Bureau/PRB as reported in the press.)
+> **A:** Meet Carrie, an AI that phones Grandma every day.
+> **B:** She doesn't replace your call. She gives you a reason to make it.
 
 ## 0:12–0:55 · The call (Rose's phone, `/rose`)
 
@@ -35,7 +45,7 @@ Hang up. On screen: **"Here's what I'll pass on"**, under To Dr. Chen, To Leo, a
 
 - **Mia** (`/family/mia`): Mum this week. She sees the eye-clinic request and taps **I'll do it**. **The knee is not there**, because Rose said not Mia. Caption: *Only what Mum said Mia can know.*
 - **Leo** (`/family/leo`): Carrie's card at the top: *"Grandma misses you and is baking apple cake for Saturday. You last spoke 12 days ago."* (`/api/carrie/family-update`). He taps play and hears **Rose's own voice**: "I do miss that boy." He records a voice note back.
-- Voice-over: *We don't replace the call. We give you a reason to make it.*
+- **B:** *Leo hadn't called in twelve days. Now he knows what to say.*
 
 ## 1:25–1:45 · The doctor (`/doctor`)
 
@@ -43,5 +53,7 @@ One page before the visit: knee since Sunday and dizziness about 30 minutes afte
 
 ## 1:45–2:00 · Why you can trust it (voice-over over the receipts)
 
-> AI can be wrong. So Carrie never makes anything up. Every fact comes from Rose's own words, with the recording to prove it. Carrie only carries. People decide.
-> Carrie: GPT-Live 1 for the voice, GBrain for memory with sources, and Rose's consent on every fact.
+> **B:** AI can be wrong. So Carrie never makes anything up. Every fact comes from Rose's own words, with the recording to prove it.
+> **A:** Carrie only carries. Rose decides who hears what.
+> **B:** GPT-Live 1 for the voice, GBrain for memory with sources, and consent on every fact.
+> **A:** Carrie. More calls, not fewer.
