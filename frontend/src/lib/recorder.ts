@@ -3,7 +3,7 @@ export interface Recording {
   blob: Blob
   durationMs: number
   mimeType: string
-  extension: 'webm' | 'mp4'
+  extension: 'webm' | 'mp4' | 'wav'
 }
 
 export interface ActiveRecording {

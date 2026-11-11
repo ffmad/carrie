@@ -33,6 +33,9 @@ export const api = {
   post: <T>(path: string, body: unknown) => request<T>(path, { method: 'POST', body: JSON.stringify(body) }),
 }
 
-export const getHealth = () => api.get<{ ok: boolean; carrie: 'claude' | 'script' }>('/health')
+export const getHealth = () => api.get<{ ok: boolean; carrie: 'claude' | 'script'; live?: string | null }>('/health')
 
 export const carrieTurn = (body: CarrieTurnRequest) => api.post<CarrieTurnResponse>('/carrie/turn', body)
+
+/** Facts from Rose's latest words, worked out beside a GPT-Live call (a turn response without `reply`). */
+export const carrieFacts = (body: CarrieTurnRequest) => api.post<Omit<CarrieTurnResponse, 'reply'>>('/carrie/facts', body)
