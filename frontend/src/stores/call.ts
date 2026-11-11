@@ -202,15 +202,18 @@ export const useCallStore = defineStore('call', () => {
   }
 
   /**
-   * A live call needs a microphone. On a machine without one, or with `?typed` in the address,
-   * the call stays turn by turn so it can still be driven by tapping and typing.
+   * A live call needs a microphone, and the only reliable way to know is to ask for it: before
+   * permission is given, phones do not list their microphones at all. If it cannot be opened
+   * (no microphone, or permission refused), or the address has `?typed`, the call stays turn by turn.
    */
   async function canTalkLive(): Promise<boolean> {
     if (new URLSearchParams(window.location.search).has('typed')) return false
     try {
-      const devices = await navigator.mediaDevices.enumerateDevices()
-      return devices.some((device) => device.kind === 'audioinput')
-    } catch {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream.getTracks().forEach((track) => track.stop())
+      return true
+    } catch (cause) {
+      console.warn('[call] no microphone, staying turn by turn', cause)
       return false
     }
   }
