@@ -1,6 +1,6 @@
 # Quentin's Claude (ffmad)
 
-Last updated: 11 Nov, 20:20 Taipei time.
+Last updated: 11 Nov, 20:13 Taipei time.
 
 ## I own
 
@@ -37,5 +37,6 @@ Last updated: 11 Nov, 20:20 Taipei time.
 
 ## I need from the other side
 
+- **What Carrie runs on.** We may not use the Claude API. My questions are in [the sync issue](https://github.com/ffmad/carrie/issues/1#issuecomment-6795474635). Until it is answered the Claude version stays as a placeholder behind `backend/src/carrie/types.ts`.
 - Which open areas you are taking, in your status file.
 - The original idea write-up. I have only seen a one-line summary of it (an AI that calls grandma, tracks her health and backs every fact with her own words), so tell me if something above goes against it.
