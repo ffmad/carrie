@@ -1,4 +1,6 @@
 /* Reset and shared primitives. Colors, radii and spacing come from tokens.css only. */
+@import '@fontsource-variable/nunito/index.css';
+
 *,
 *::before,
 *::after {
@@ -15,6 +17,7 @@ body {
   margin: 0;
   font-family: var(--font-sans);
   font-size: var(--text-md);
+  font-weight: var(--weight-normal);
   line-height: var(--leading);
   color: var(--color-text);
   background: var(--color-bg);
@@ -40,6 +43,7 @@ h1,
 h2,
 h3 {
   font-family: var(--font-display);
+  font-weight: var(--weight-bold);
   line-height: 1.2;
   text-wrap: balance;
 }

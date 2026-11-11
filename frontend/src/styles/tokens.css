@@ -2,10 +2,13 @@
  * Design tokens: the single source of truth for color, type, radius and spacing.
  * Components only use these variables, so a redesign is a change to this file.
  * (Mirror --color-primary / --color-bg in vite.config.ts for the PWA manifest.)
+ *
+ * Direction: Carrie the carrier dove. Sky, navy, blue and the orange of her satchel.
+ * Type is Nunito (see design/chosen/README.md for how to load it).
  */
 :root {
   /* Type */
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-sans: 'Nunito Variable', 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   --font-display: var(--font-sans);
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
@@ -14,63 +17,63 @@
   --text-xl: 1.625rem;
   --text-2xl: 2.125rem;
   --leading: 1.45;
-  --weight-normal: 400;
-  --weight-medium: 550;
-  --weight-bold: 700;
+  --weight-normal: 500;
+  --weight-medium: 700;
+  --weight-bold: 800;
 
   /* Surfaces and text */
-  --color-bg: #faf6f0;
+  --color-bg: #eaf4ff;
   --color-surface: #ffffff;
-  --color-surface-alt: #f3ece2;
-  --color-border: #e6dccf;
-  --color-text: #2b2622;
-  --color-text-muted: #756a61;
+  --color-surface-alt: #dcebfa;
+  --color-border: #c3d7f0;
+  --color-text: #10214f;
+  --color-text-muted: #4a5a85;
 
   /* Brand and states */
-  --color-primary: #c8643c;
+  --color-primary: #2460f0;
   --color-primary-contrast: #ffffff;
-  --color-primary-soft: #f7e3d8;
-  --color-accent: #3f7d6e;
-  --color-accent-contrast: #ffffff;
-  --color-accent-soft: #dcefe9;
-  --color-danger: #b3402e;
+  --color-primary-soft: #dce7ff;
+  --color-accent: #ff7a45;
+  --color-accent-contrast: #10214f;
+  --color-accent-soft: #ffe6da;
+  --color-danger: #c2372b;
   --color-danger-contrast: #ffffff;
-  --color-danger-soft: #f8dfda;
+  --color-danger-soft: #fbe1dd;
 
   /* Sharing audiences */
-  --color-share-private-bg: #ece7e1;
-  --color-share-private-fg: #5a514a;
-  --color-share-family-bg: #f7e3d8;
-  --color-share-family-fg: #8a3f20;
-  --color-share-doctor-bg: #dcefe9;
-  --color-share-doctor-fg: #25574b;
-  --color-share-pending-bg: #fbf0cf;
+  --color-share-private-bg: #e4e9f2;
+  --color-share-private-fg: #47536e;
+  --color-share-family-bg: #ffe6da;
+  --color-share-family-fg: #9a3d12;
+  --color-share-doctor-bg: #dce7ff;
+  --color-share-doctor-fg: #1d4bc4;
+  --color-share-pending-bg: #fff1c7;
   --color-share-pending-fg: #7a5a0c;
 
   /* People (avatar_color values in the demo data point at these) */
-  --color-person-rose: #c8643c;
-  --color-person-mia: #7a6bb0;
-  --color-person-leo: #3d86b8;
-  --color-person-chen: #3f7d6e;
+  --color-person-rose: #d6457a;
+  --color-person-mia: #7c5cd6;
+  --color-person-leo: #0e8f9e;
+  --color-person-chen: #2f855a;
   --color-person-contrast: #ffffff;
 
-  /* Carrie placeholder avatar */
-  --color-carrie-body: #f2b89b;
-  --color-carrie-shade: #e79a78;
-  --color-carrie-face: #2b2622;
-  --color-carrie-glow: #f7e3d8;
+  /* Carrie: the rings behind her and the shadow under her (the dove herself is an image) */
+  --color-carrie-body: #ffffff;
+  --color-carrie-shade: #e3ecf8;
+  --color-carrie-face: #10214f;
+  --color-carrie-glow: #bcd4ff;
 
   /* Desktop phone frame */
-  --color-backdrop: #e9e1d6;
-  --color-frame: #2b2622;
+  --color-backdrop: #cfe0f5;
+  --color-frame: #10214f;
   --phone-width: 390px;
   --phone-height: 844px;
   --frame-border: 10px;
 
   /* Radius */
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 22px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
   --radius-pill: 999px;
   --radius-frame: 46px;
 
@@ -89,8 +92,8 @@
   --tap-big: 64px;
 
   /* Elevation and motion */
-  --shadow-card: 0 1px 2px rgb(43 38 34 / 6%), 0 4px 14px rgb(43 38 34 / 6%);
-  --shadow-frame: 0 30px 80px rgb(43 38 34 / 28%);
+  --shadow-card: 0 1px 2px rgb(16 33 79 / 6%), 0 6px 18px rgb(16 33 79 / 8%);
+  --shadow-frame: 0 30px 80px rgb(16 33 79 / 30%);
   --duration-fast: 150ms;
   --duration-slow: 400ms;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);

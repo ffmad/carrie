@@ -1,13 +1,19 @@
 <script setup lang="ts">
 /**
- * Placeholder Carrie: a clearly non-human, stylized character.
- * This file is the single swap point for the real design: keep the `state`
- * and `size` props and replace the SVG and animations.
+ * Carrie the carrier dove: a clearly non-human, stylized character.
+ * Three rendered poses (idle, listening, speaking) share one canvas with her feet
+ * in the same spot, so the states cross-fade in place. Same props as the placeholder.
+ * The images live in public/carrie/.
  */
 withDefaults(defineProps<{ state?: 'idle' | 'listening' | 'speaking'; size?: number }>(), {
   state: 'idle',
   size: 160,
 })
+
+const poses = (['idle', 'listening', 'speaking'] as const).map((name) => ({
+  name,
+  url: `${import.meta.env.BASE_URL}carrie/carrie-${name}.webp`,
+}))
 </script>
 
 <template>
@@ -20,19 +26,18 @@ withDefaults(defineProps<{ state?: 'idle' | 'listening' | 'speaking'; size?: num
   >
     <span class="carrie__ring" />
     <span class="carrie__ring carrie__ring--late" />
-    <svg class="carrie__figure" viewBox="0 0 120 120" aria-hidden="true">
-      <line class="carrie__stem" x1="60" y1="12" x2="60" y2="24" />
-      <circle class="carrie__spark" cx="60" cy="10" r="4" />
-      <ellipse class="carrie__body" cx="60" cy="66" rx="44" ry="42" />
-      <ellipse class="carrie__cheek" cx="36" cy="74" rx="7" ry="4.5" />
-      <ellipse class="carrie__cheek" cx="84" cy="74" rx="7" ry="4.5" />
-      <g class="carrie__eyes">
-        <circle cx="46" cy="60" r="4.5" />
-        <circle cx="74" cy="60" r="4.5" />
-      </g>
-      <path class="carrie__smile" d="M49 76 Q60 86 71 76" />
-      <ellipse class="carrie__mouth" cx="60" cy="79" rx="8" ry="6" />
-    </svg>
+    <span class="carrie__shadow" />
+    <div class="carrie__figure">
+      <img
+        v-for="pose in poses"
+        :key="pose.name"
+        class="carrie__pose"
+        :class="{ 'carrie__pose--on': pose.name === state }"
+        :src="pose.url"
+        alt=""
+        draggable="false"
+      />
+    </div>
   </div>
 </template>
 
@@ -44,114 +49,111 @@ withDefaults(defineProps<{ state?: 'idle' | 'listening' | 'speaking'; size?: num
   flex: none;
 }
 
+/* She stands on the bottom edge of the box, so everything moves from her feet. */
 .carrie__figure {
-  position: relative;
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 96%;
+  animation: carrie-breathe 4s ease-in-out infinite;
+}
+
+.carrie__pose {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  animation: carrie-float 4s ease-in-out infinite;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease);
+  user-select: none;
 }
 
-.carrie__body {
-  fill: var(--color-carrie-body);
+.carrie__pose--on {
+  opacity: 1;
 }
 
-.carrie__cheek {
-  fill: var(--color-carrie-shade);
-}
-
-.carrie__eyes,
-.carrie__mouth,
-.carrie__spark {
-  fill: var(--color-carrie-face);
-}
-
-.carrie__eyes {
-  transform-origin: 60px 60px;
-  animation: carrie-blink 5s infinite;
-}
-
-.carrie__stem,
-.carrie__smile {
-  fill: none;
-  stroke: var(--color-carrie-face);
-  stroke-width: 3;
-  stroke-linecap: round;
-}
-
-.carrie__mouth {
-  display: none;
-  transform-origin: 60px 79px;
+.carrie__shadow {
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  bottom: 1%;
+  height: 7%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--color-carrie-face), transparent);
+  opacity: 0.22;
 }
 
 .carrie__ring {
   position: absolute;
-  inset: 8%;
+  inset: 12%;
   border-radius: var(--radius-pill);
   background: var(--color-carrie-glow);
   opacity: 0;
 }
 
-/* Listening: soft rings ripple outward. */
+/* Listening: she leans in and soft rings arrive around her. */
 .carrie--listening .carrie__ring {
-  animation: carrie-ripple 2s var(--ease) infinite;
+  animation: carrie-ripple 2s var(--ease) infinite reverse;
 }
 
 .carrie--listening .carrie__ring--late {
   animation-delay: 1s;
 }
 
-.carrie--listening .carrie__spark {
-  fill: var(--color-accent);
+.carrie--listening .carrie__figure {
+  animation: carrie-lean 2.4s ease-in-out infinite;
 }
 
-/* Speaking: the smile becomes a moving mouth. */
-.carrie--speaking .carrie__smile {
-  display: none;
+/* Speaking: rings travel outward in her satchel's orange and she bobs as she talks. */
+.carrie--speaking .carrie__ring {
+  background: var(--color-accent-soft);
+  animation: carrie-ripple 1.6s var(--ease) infinite;
 }
 
-.carrie--speaking .carrie__mouth {
-  display: block;
-  animation: carrie-talk 0.38s ease-in-out infinite alternate;
+.carrie--speaking .carrie__ring--late {
+  animation-delay: 0.8s;
 }
 
-.carrie--speaking .carrie__spark {
-  fill: var(--color-primary);
+.carrie--speaking .carrie__figure {
+  animation: carrie-talk 0.42s ease-in-out infinite alternate;
 }
 
-@keyframes carrie-float {
+@keyframes carrie-breathe {
   50% {
-    transform: translateY(-3%);
+    transform: scale(1.012, 1.022);
   }
 }
 
-@keyframes carrie-blink {
-  0%,
-  94%,
-  100% {
-    transform: scaleY(1);
-  }
-  97% {
-    transform: scaleY(0.1);
-  }
-}
-
-@keyframes carrie-ripple {
-  from {
-    transform: scale(0.85);
-    opacity: 0.9;
-  }
-  to {
-    transform: scale(1.35);
-    opacity: 0;
+@keyframes carrie-lean {
+  50% {
+    transform: rotate(-2deg) scale(1.01);
   }
 }
 
 @keyframes carrie-talk {
   from {
-    transform: scaleY(0.25);
+    transform: scale(1.012, 0.988);
   }
   to {
-    transform: scaleY(1);
+    transform: scale(0.992, 1.016) translateY(-1.5%);
+  }
+}
+
+@keyframes carrie-ripple {
+  from {
+    transform: scale(0.8);
+    opacity: 0.85;
+  }
+  to {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carrie__figure,
+  .carrie__ring {
+    animation: none !important;
   }
 }
 </style>
