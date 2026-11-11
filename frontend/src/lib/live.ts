@@ -49,14 +49,25 @@ export class LiveCall {
   constructor(private handlers: LiveCallHandlers) {}
 
   async start(options: LiveCallOptions = {}, mic?: MediaStream) {
+    // Phones (iOS Safari especially) only allow sound that starts inside the tap. Create and unlock the
+    // player and the audio context first thing; this only helps if start() is called from the tap itself.
+    this.player = new Audio()
+    this.player.autoplay = true
+    this.player.setAttribute('playsinline', '')
+    void this.player.play().catch(() => {})
+    this.audioCtx = new AudioContext()
+    void this.audioCtx.resume().catch(() => {})
+
     // The caller may hand over a microphone it already opened, so it is asked for only once.
     this.mic = mic ?? (await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }))
     this.captureMic(this.mic)
 
     const pc = (this.pc = new RTCPeerConnection())
-    this.player = new Audio()
-    this.player.autoplay = true
-    pc.ontrack = (event) => { if (this.player) this.player.srcObject = event.streams[0] ?? null }
+    pc.ontrack = (event) => {
+      if (!this.player) return
+      this.player.srcObject = event.streams[0] ?? null
+      void this.player.play().catch((e) => console.warn('[live] could not play Carrie', e))
+    }
     this.mic.getTracks().forEach((track) => pc.addTrack(track, this.mic!))
 
     const dc = (this.dc = pc.createDataChannel('oai-events'))
@@ -165,7 +176,7 @@ export class LiveCall {
 
   /** Keep the microphone as 16 kHz PCM so any stretch of it can become a WAV clip. */
   private captureMic(stream: MediaStream) {
-    const ctx = (this.audioCtx = new AudioContext())
+    const ctx = (this.audioCtx ??= new AudioContext())
     const source = ctx.createMediaStreamSource(stream)
     const node = ctx.createScriptProcessor(4096, 1, 1)
     const step = ctx.sampleRate / CLIP_RATE
