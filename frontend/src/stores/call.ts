@@ -352,10 +352,15 @@ export const useCallStore = defineStore('call', () => {
     for (const extracted of response.facts) {
       const id = crypto.randomUUID()
       createdIds.push(id)
+      // The agreed framework: everyday news goes to the family without a question; 'private' is hers alone.
+      const everyday = extracted.sharing === 'everyday'
       await factsStore.add({
         id, callId, elderId: circle.elder.id, utteranceId,
         category: extracted.category, statement: extracted.statement, quote: extracted.quote,
-        sharedWith: [], claimedBy: null, consent: 'pending', createdAt: new Date().toISOString(),
+        sharedWith: everyday ? circle.family.map((p) => p.id) : [],
+        claimedBy: null,
+        consent: everyday ? 'granted' : extracted.sharing === 'private' ? 'declined' : 'pending',
+        createdAt: new Date().toISOString(),
       })
     }
     await shareWithAddressed(text, createdIds)

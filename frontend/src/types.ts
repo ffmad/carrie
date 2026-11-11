@@ -109,7 +109,11 @@ export interface CarrieTurnRequest {
 
 export interface CarrieTurnResponse {
   reply: string
-  facts: { category: FactCategory; statement: string; quote: string }[]
+  /**
+   * `sharing` (from the OpenAI facts path) follows the circle's agreed framework: 'everyday' goes to the
+   * family without asking, 'ask' waits for Rose's yes, 'private' stays between Rose and Carrie.
+   */
+  facts: { category: FactCategory; statement: string; quote: string; sharing?: 'everyday' | 'ask' | 'private' }[]
   /** `factIndex` points into `facts` of the same response. */
   consentQuestion?: { factIndex: number; audience: Audience; question: string; person?: string }
   /** Set by the facts step when she describes something urgent (a fall, chest pain, cannot breathe). */
