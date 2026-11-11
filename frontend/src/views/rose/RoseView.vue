@@ -5,6 +5,7 @@ import CaptionStream from '../../components/CaptionStream.vue'
 import CarrieAvatar from '../../components/CarrieAvatar.vue'
 import ConsentPrompt from '../../components/ConsentPrompt.vue'
 import { demoElderLines } from '../../lib/demoData'
+import { usePolling } from '../../lib/poll'
 import { recorderSupported, startRecording, type ActiveRecording } from '../../lib/recorder'
 import { recognitionSupported, startCaptions, stopSpeaking, type Captioner } from '../../lib/speech'
 import { useCallStore } from '../../stores/call'
@@ -116,6 +117,21 @@ watch(
   },
   { immediate: true },
 )
+
+/* Carrie rings at the agreed time, once a day, while this phone has the app open. */
+const RANG_KEY = 'carrie.rang'
+usePolling(() => {
+  const now = new Date()
+  const today = now.toDateString()
+  if (call.phase !== 'idle' || now.toTimeString().slice(0, 5) !== settings.settings.callTime.slice(0, 5)) return
+  try {
+    if (localStorage.getItem(RANG_KEY) === today) return
+    localStorage.setItem(RANG_KEY, today)
+  } catch {
+    // Private mode: she may get a second ring within the same minute.
+  }
+  call.ring()
+}, 10_000)
 
 /* In the call. Tap-to-speak and typing are for calls that are not live; a live call needs no hands. */
 const listening = ref(false)
@@ -327,6 +343,7 @@ onBeforeUnmount(() => {
             :question="call.pendingConsent.question"
             :audience="call.pendingConsent.audience"
             :names="askedNames"
+            :also-name="(call.pendingConsent.audience === 'doctor' ? settings.mainContact?.name : circle.doctor?.name) ?? undefined"
             :disabled="busy || listening"
             @answer="answerConsent"
           />

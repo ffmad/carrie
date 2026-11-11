@@ -4,6 +4,7 @@ import { RouterLink, RouterView, useRoute } from 'vue-router'
 import CarrieLogo from '../../components/CarrieLogo.vue'
 import { initialOf } from '../../lib/format'
 import { useCircleStore } from '../../stores/circle'
+import { useFactsStore } from '../../stores/facts'
 
 /** The family app: whose phone this is comes from the address, then three tabs. */
 const route = useRoute()
@@ -16,6 +17,15 @@ const viewer = computed(() => circle.viewer)
 /** A daughter says "Mum", a grandson says "Grandma". */
 const herLabel = computed(() => (/grand/i.test(viewer.value.relation) ? 'Grandma' : 'Mum'))
 const base = computed(() => `/family/${who.value}`)
+
+/* The one exception to consent: something Rose said in the last hour that may need help now. */
+const facts = useFactsStore()
+const urgent = computed(
+  () =>
+    facts
+      .sharedWith(viewer.value.id)
+      .find((f) => f.statement.startsWith('Urgent') && Date.now() - Date.parse(f.createdAt) < 3_600_000) ?? null,
+)
 </script>
 
 <template>
@@ -29,6 +39,12 @@ const base = computed(() => `/family/${who.value}`)
         <span class="family__avatar" :style="{ background: viewer.avatarColor }" aria-hidden="true">{{ initialOf(viewer.name) }}</span>
       </span>
     </header>
+
+    <aside v-if="urgent" class="family__urgent" role="alert">
+      <strong>Urgent · {{ circle.elder.name }} may need help now</strong>
+      <span>She just told Carrie: “{{ urgent.quote }}”</span>
+      <span class="family__urgent-note">Carrie has told her she is letting you know.</span>
+    </aside>
 
     <RouterView />
 
@@ -136,5 +152,19 @@ const base = computed(() => `/family/${who.value}`)
 
 .tabs__tab--on {
   color: var(--color-primary);
+}
+
+.family__urgent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-danger);
+  color: var(--color-danger-contrast);
+  font-size: var(--text-md);
+}
+
+.family__urgent-note {
+  font-size: var(--text-sm);
 }
 </style>

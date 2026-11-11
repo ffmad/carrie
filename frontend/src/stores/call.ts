@@ -142,6 +142,7 @@ export const useCallStore = defineStore('call', () => {
     const utterance = addUtterance('elder', said, audioPath, circle.elder.id, utteranceId)
     factsStore.addReceipt(utterance)
     carryAnswerBack(said, audioPath)
+    if (URGENT.test(said)) await raiseAlarm(said, utteranceId)
 
     if (phase.value === 'consent' && pendingConsent.value && !options.consentHandled) {
       await applyConsent(interpretConsent(said, pendingConsent.value.audience))
@@ -262,6 +263,7 @@ export const useCallStore = defineStore('call', () => {
     const utterance = addUtterance('elder', text, audioPath, circle.elder.id, utteranceId)
     factsStore.addReceipt(utterance)
     carryAnswerBack(text, audioPath)
+    if (URGENT.test(text)) void raiseAlarm(text, utteranceId)
 
     if (phase.value === 'consent' && pendingConsent.value) {
       await applyConsent(interpretConsent(text, pendingConsent.value.audience))
@@ -392,6 +394,33 @@ export const useCallStore = defineStore('call', () => {
     await factsStore.setSharing(pending.factId, { allow, deny })
   }
 
+  /**
+   * The one stated exception to consent: when she says something that sounds dangerous,
+   * the main contact is told at once, and Carrie tells her so in the same breath.
+   */
+  async function raiseAlarm(text: string, utteranceId: string) {
+    const main = settings.mainContact
+    if (!main || !call.value) return
+    await factsStore.add({
+      id: crypto.randomUUID(),
+      callId: call.value.id,
+      elderId: circle.elder.id,
+      utteranceId,
+      category: 'health',
+      statement: 'Urgent: she said something that may need help now',
+      quote: text,
+      sharedWith: [main.id],
+      claimedBy: null,
+      consent: 'granted',
+      createdAt: new Date().toISOString(),
+    })
+    if (live) {
+      live.instruct(`Rose just said something that may be an emergency: "${text}" Tell her calmly, in your own words, that you are letting ${main.name} know right now, and that she should call the emergency number if she feels unsafe. Then stay with her.`)
+    } else {
+      await say(`Rose, that worries me. I am letting ${main.name} know right now. If you feel unsafe, please call the emergency number.`)
+    }
+  }
+
   /** Who a yes would tell: the doctor, or the family members named in the question (the main contact if none is). */
   function peopleAskedAbout(audience: Audience, question: string): string[] {
     if (audience === 'doctor') return circle.doctor ? [circle.doctor.id] : []
@@ -425,6 +454,9 @@ export const useCallStore = defineStore('call', () => {
 
   return { phase, carrie, call, utterances, interim, thinking, error, pendingConsent, liveMode, playingNote, inCall, callFacts, elderTurns, ring, answer, start, reset, hearElder, answerConsent, hangUp }
 })
+
+/** Narrow on purpose: her own fall, chest pain, not breathing, passing out. A word match, not a judgement. */
+const URGENT = /\b(i|i've|i have|i just)\s+(fell|fallen|had a fall)\b|\bchest (pain|hurts)\b|\bcan(?:'|no)t breathe\b|\b(passed out|fainted|blacked out)\b/i
 
 const FAMILY_WORDS = /\b(daughter|family|mia|leo|grandson|son|kids|children)\b/
 const DOCTOR_WORDS = /\b(doctor|dr|chen|physician|gp)\b/

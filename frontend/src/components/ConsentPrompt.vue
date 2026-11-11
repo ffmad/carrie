@@ -16,6 +16,8 @@ const props = defineProps<{
   audience: Audience
   /** First names of the people a yes would tell ("Mia"), when Carrie named them. */
   names?: string[]
+  /** The one other person she could add: her main contact when Carrie asked about the doctor, and the other way round. */
+  alsoName?: string
   disabled?: boolean
 }>()
 const emit = defineEmits<{ answer: [decision: Decision] }>()
@@ -36,7 +38,7 @@ const yes = () => emit('answer', props.audience === 'doctor' ? { doctor: true } 
     <div class="ask__choices">
       <button type="button" class="btn btn--accent btn--block ask__choice" :disabled="disabled" @click="yes">Yes, tell {{ who }}</button>
       <button type="button" class="btn btn--block ask__choice" :disabled="disabled" @click="emit('answer', { family: true, doctor: true })">
-        Tell my family and my doctor
+        Yes, and tell {{ alsoName ?? (audience === 'doctor' ? 'my family' : 'my doctor') }} too
       </button>
       <button type="button" class="btn btn--block ask__choice" :disabled="disabled" @click="emit('answer', { family: false, doctor: false })">
         No, keep it between us
