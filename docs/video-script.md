@@ -10,7 +10,10 @@ Before recording:
 
 ## 0:00–0:12 · The problem (voice-over, Rose alone at her window)
 
-> One in five people in Taiwan is over 65. Families love them, but they're busy, far away, and often don't know what to say when they call.
+> In Japan, nearly one in three people is over 65. Korea and Taiwan just crossed one in five. The US is at nearly one in five, and climbing.
+> Their families love them, but they're busy, far away, and often don't know what to say when they call.
+
+(Figures for 2025: Japan 29.7%, Korea 20% from late 2024, Taiwan 20.06%, US 18.9%. Sources: Taiwan Ministry of the Interior, Statistics Korea, and US Census Bureau/PRB as reported in the press.)
 > Meet Carrie. She doesn't replace the call. She gives you a reason to make it.
 
 ## 0:12–0:55 · The call (Rose's phone, `/rose`)
